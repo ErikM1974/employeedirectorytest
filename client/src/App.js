@@ -24,6 +24,9 @@ const DEPARTMENT_COLORS = {
   'Cap Department': '#673AB7',
 };
 
+// Default placeholder image
+const DEFAULT_IMAGE = 'https://cdn.caspio.com/A0E15000/Safety%20Stripes/NWCA%20Favicon%20for%20TEAMNWCA.com.png?ver=1';
+
 function App() {
   const [employees, setEmployees] = useState([]);
   const [newEmployeeName, setNewEmployeeName] = useState('');
@@ -61,6 +64,30 @@ function App() {
     }
   }
 
+  async function uploadImage(employeeId, imageFile) {
+    if (!imageFile) return;
+
+    const formData = new FormData();
+    formData.append('image', imageFile);
+
+    try {
+      const apiUrlImg =
+        process.env.NODE_ENV === 'production'
+          ? `/api/employees/${employeeId}/image`
+          : `http://localhost:3001/api/employees/${employeeId}/image`;
+      
+      await axios.put(apiUrlImg, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      
+      // Update image version to force refresh
+      setImageVersion(Date.now());
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      throw error;
+    }
+  }
+
   async function createEmployee() {
     if (!newEmployeeName) return;
     try {
@@ -72,35 +99,20 @@ function App() {
         StartDate: newEmployeeStartDate || null,
       });
 
-      // If there's an image and we got a valid response
-      if (newEmployeeImage && response.data && response.data.Result) {
-        const formData = new FormData();
-        formData.append('image', newEmployeeImage);
-
-        const employeeId = response.data.Result[0]?.ID_Employee;
-
-        if (employeeId) {
-          try {
-            const apiUrlImg =
-              process.env.NODE_ENV === 'production'
-                ? `/api/employees/${employeeId}/image`
-                : `http://localhost:3001/api/employees/${employeeId}/image`;
-            await axios.post(apiUrlImg, formData, {
-              headers: { 'Content-Type': 'multipart/form-data' },
-            });
-            setImageVersion(Date.now());
-          } catch (imageError) {
-            console.error('Error uploading image:', imageError);
-          }
-        }
+      const employeeId = response.data?.Result?.[0]?.ID_Employee;
+      
+      if (employeeId && newEmployeeImage) {
+        await uploadImage(employeeId, newEmployeeImage);
       }
 
+      // Reset form
       setNewEmployeeName('');
       setNewEmployeeStartDate('');
       setNewEmployeeImage(null);
       const fileInput = document.querySelector('input[type="file"]');
       if (fileInput) fileInput.value = '';
 
+      // Fetch updated employees list
       await fetchEmployees();
     } catch (error) {
       console.error('Error creating employee:', error.message);
@@ -341,11 +353,6 @@ function App() {
 
         {/* DragDropContext */}
         <DragDropContext onDragEnd={onDragEnd}>
-          {/* 
-            Instead of a CSS grid, we'll use flex for a more Kanban-like style.
-            Each column can have a fixed width to maintain consistent sizing 
-            and allow horizontal scrolling if needed. 
-          */}
           <div
             style={{
               display: 'flex',
@@ -362,7 +369,7 @@ function App() {
                     ref={provided.innerRef}
                     {...provided.droppableProps}
                     style={{
-                      flex: '0 0 320px', // fixed width for columns
+                      flex: '0 0 320px',
                       backgroundColor: '#fff',
                       borderRadius: '12px',
                       padding: '16px',
@@ -434,6 +441,7 @@ function App() {
                                     objectFit: 'cover',
                                     backgroundColor: '#f9fafb',
                                     border: '2px solid #fff',
+                                    display: 'block',
                                   }}
                                   onClick={(e) => {
                                     e.stopPropagation();
@@ -441,8 +449,7 @@ function App() {
                                     setImagePreviewOpen(true);
                                   }}
                                   onError={(e) => {
-                                    // Hide broken images or show placeholder
-                                    e.target.style.display = 'none';
+                                    e.target.src = DEFAULT_IMAGE;
                                   }}
                                 />
 
@@ -580,6 +587,9 @@ function App() {
               src={getImageUrl(previewEmployee.ID_Employee)}
               alt={previewEmployee.EmployeeName}
               style={{ maxWidth: '100%', maxHeight: '80vh', objectFit: 'contain' }}
+              onError={(e) => {
+                e.target.src = DEFAULT_IMAGE;
+              }}
             />
 
             <div
@@ -642,8 +652,7 @@ function App() {
                   border: '2px solid #fff',
                 }}
                 onError={(e) => {
-                  e.target.src =
-                    'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDBweCIgaGVpZ2h0PSI0MHB4IiB2aWV3Qm94PSIwIDAgNDAgNDAiIHZlcnNpb249IjEuMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCBmaWxsPSIjZjBmMGYwIiB3aWR0aD0iNDAiIGhlaWdodD0iNDAiLz48dGV4dCB4PSI1MCUiIHk9IjUwJSIgZm9udC1zaXplPSIxMiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iIGZpbGw9IiM2NjY2NjYiPk5vIEltYWdlPC90ZXh0Pjwvc3ZnPg==';
+                  e.target.src = DEFAULT_IMAGE;
                 }}
               />
               <input
@@ -653,19 +662,9 @@ function App() {
                   const file = e.target.files[0];
                   if (file) {
                     try {
-                      const formData = new FormData();
-                      formData.append('image', file);
-                      await axios.put(
-                        `${
-                          process.env.NODE_ENV === 'production' ? '' : 'http://localhost:3001'
-                        }/api/employees/${editingEmployee.ID_Employee}/image`,
-                        formData,
-                        { headers: { 'Content-Type': 'multipart/form-data' } }
-                      );
+                      await uploadImage(editingEmployee.ID_Employee, file);
                       await fetchEmployees();
-                      setImageVersion(Date.now());
                     } catch (error) {
-                      console.error('Error uploading image:', error);
                       alert('Failed to upload image. Please try again.');
                     }
                   }
