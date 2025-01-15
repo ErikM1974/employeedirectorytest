@@ -87,6 +87,14 @@ function App() {
             await axios.post(apiUrlImg, formData, {
               headers: { 'Content-Type': 'multipart/form-data' },
             });
+            
+            // Force refresh of all employee images
+            setTimeout(() => {
+              const timestamp = new Date().getTime();
+              document.querySelectorAll('img[src*="/api/employees/"]').forEach((img) => {
+                img.src = `${img.src.split('?')[0]}?t=${timestamp}`;
+              });
+            }, 100);
           } catch (imageError) {
             console.error('Error uploading image:', imageError);
           }
@@ -99,7 +107,15 @@ function App() {
       const fileInput = document.querySelector('input[type="file"]');
       if (fileInput) fileInput.value = '';
 
-      fetchEmployees();
+      await fetchEmployees();
+      
+      // Refresh images again after fetching employees
+      setTimeout(() => {
+        const timestamp = new Date().getTime();
+        document.querySelectorAll('img[src*="/api/employees/"]').forEach((img) => {
+          img.src = `${img.src.split('?')[0]}?t=${timestamp}`;
+        });
+      }, 100);
     } catch (error) {
       console.error('Error creating employee:', error.message);
       if (error.response?.data?.error) {
