@@ -103,7 +103,11 @@ function App() {
       
       if (employeeId && newEmployeeImage) {
         await uploadImage(employeeId, newEmployeeImage);
+        setImageVersion(Date.now()); // Force immediate image refresh
       }
+
+      // Fetch updated employees list
+      await fetchEmployees();
 
       // Reset form
       setNewEmployeeName('');
@@ -111,9 +115,6 @@ function App() {
       setNewEmployeeImage(null);
       const fileInput = document.querySelector('input[type="file"]');
       if (fileInput) fileInput.value = '';
-
-      // Fetch updated employees list
-      await fetchEmployees();
     } catch (error) {
       console.error('Error creating employee:', error.message);
       if (error.response?.data?.error) {
