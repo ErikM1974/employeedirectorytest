@@ -24,15 +24,20 @@ const DEPARTMENT_COLORS = {
   'Cap Department': '#673AB7',
 };
 
-// Default placeholder image
-const DEFAULT_IMAGE = 'https://cdn.caspio.com/A0E15000/Safety%20Stripes/NWCA%20Favicon%20for%20TEAMNWCA.com.png?ver=1';
+// A placeholder if the employee does not have an image or fails to load
+const DEFAULT_IMAGE =
+  'https://cdn.caspio.com/A0E15000/Safety%20Stripes/NWCA%20Favicon%20for%20TEAMNWCA.com.png?ver=1';
 
 function App() {
   const [employees, setEmployees] = useState([]);
+
+  // New employee form fields
   const [newEmployeeName, setNewEmployeeName] = useState('');
   const [newEmployeeDept, setNewEmployeeDept] = useState(DEPARTMENTS[0]);
   const [newEmployeeStartDate, setNewEmployeeStartDate] = useState('');
   const [newEmployeeImage, setNewEmployeeImage] = useState(null);
+
+  // We track "imageVersion" for cache-busting in the <img> src query param
   const [imageVersion, setImageVersion] = useState(Date.now());
 
   // Edit modal state
@@ -45,139 +50,178 @@ function App() {
   const [imagePreviewOpen, setImagePreviewOpen] = useState(false);
   const [previewEmployee, setPreviewEmployee] = useState(null);
 
+  // Fetch employees on initial load
   useEffect(() => {
     fetchEmployees();
+
+    // Basic global style
     document.body.style.backgroundColor = '#f5f5f5';
     document.body.style.margin = 0;
     document.body.style.padding = 0;
-    document.body.style.fontFamily = "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+    document.body.style.fontFamily =
+      "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
   }, []);
 
+  /**
+   * Fetch all employees from the backend
+   */
   async function fetchEmployees() {
     try {
-      const apiUrl =
-        process.env.NODE_ENV === 'production' ? '/api/employees' : 'http://localhost:3001/api/employees';
-      const { data } = await axios.get(apiUrl);
+      const baseUrl =
+        process.env.NODE_ENV === 'production'
+          ? '/api/employees'
+          : 'http://localhost:3001/api/employees';
+      const { data } = await axios.get(baseUrl);
       setEmployees(data);
     } catch (error) {
-      console.error('Error fetching employees:', error.message);
+      console.error('Error fetching employees:', error);
     }
   }
 
-  async function uploadImage(employeeId, imageFile) {
-    if (!imageFile) return;
-
-    const formData = new FormData();
-    formData.append('image', imageFile);
-
-    try {
-      const apiUrlImg =
-        process.env.NODE_ENV === 'production'
-          ? `/api/employees/${employeeId}/image`
-          : `http://localhost:3001/api/employees/${employeeId}/image`;
-      
-      await axios.put(apiUrlImg, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
-      
-      // Update image version to force refresh
-      setImageVersion(Date.now());
-    } catch (error) {
-      console.error('Error uploading image:', error);
-      throw error;
-    }
-  }
-
+  /**
+   * Create a new employee, then upload the file if provided.
+   */
   async function createEmployee() {
-    if (!newEmployeeName) return;
+    if (!newEmployeeName) return; // Basic validation
     try {
-      const apiUrl =
-        process.env.NODE_ENV === 'production' ? '/api/employees' : 'http://localhost:3001/api/employees';
-      const response = await axios.post(apiUrl, {
-        EmployeeName: newEmployeeName,
+      const baseUrl =
+        process.env.NODE_ENV === 'production'
+          ? '/api/employees'
+          : 'http://localhost:3001/api/employees';
+
+      // 1) Create the employee (name, dept, date)
+      const response = await axios.post(baseUrl, {
+        EmployeeName: newEmployeeName.trim(),
         Department: newEmployeeDept,
         StartDate: newEmployeeStartDate || null,
       });
 
-      const employeeId = response.data?.Result?.[0]?.ID_Employee;
-      
-      if (employeeId && newEmployeeImage) {
-        await uploadImage(employeeId, newEmployeeImage);
-        setImageVersion(Date.now()); // Force immediate image refresh
+      // The server returns the newly created record
+      const newEmpId = response.data?.ID_Employee;
+      if (!newEmpId) {
+        // fallback: if not returned properly, or check your server logs
+        throw new Error('No ID returned for new employee');
       }
 
-      // Fetch updated employees list
-      await fetchEmployees();
+      // 2) If user selected an image, upload it
+      if (newEmployeeImage) {
+        await uploadImage(newEmpId, newEmployeeImage);
+      }
 
-      // Reset form
+      // 3) Clear form & re-fetch employees to see new addition
       setNewEmployeeName('');
       setNewEmployeeStartDate('');
       setNewEmployeeImage(null);
+
+      // Clear the file input
       const fileInput = document.querySelector('input[type="file"]');
       if (fileInput) fileInput.value = '';
+
+      await fetchEmployees();
     } catch (error) {
-      console.error('Error creating employee:', error.message);
-      if (error.response?.data?.error) {
-        alert(`Failed to create employee: ${error.response.data.error}`);
-      } else {
-        alert('Failed to create employee. Please try again.');
-      }
+      console.error('Error creating employee:', error);
+      alert(
+        error?.response?.data?.error ||
+          'Failed to create employee. Please try again.'
+      );
     }
   }
 
-  const onDragEnd = async (result) => {
+  /**
+   * Upload the image for a given employee (PUT /employees/:id/image)
+   * with the actual file in multipart form-data.
+   */
+  async function uploadImage(employeeId, file) {
+    try {
+      const baseUrl =
+        process.env.NODE_ENV === 'production'
+          ? ''
+          : 'http://localhost:3001';
+      const url = `${baseUrl}/api/employees/${employeeId}/image`;
+
+      const formData = new FormData();
+      // The server expects a field name that matches Multer config, e.g. "File"
+      formData.append('File', file);
+
+      // PUT if your server route is PUT /api/employees/:id/image
+      await axios.put(url, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+
+      // Bump imageVersion so <img> tags re-fetch the new image
+      setImageVersion(Date.now());
+    } catch (error) {
+      console.error('Image upload failed:', error);
+      throw error; // Rethrow so we can handle it upstream if needed
+    }
+  }
+
+  /**
+   * Construct the image URL for an employee with cache busting.
+   */
+  function getImageUrl(employeeId) {
+    if (!employeeId) return DEFAULT_IMAGE;
+    const baseUrl =
+      process.env.NODE_ENV === 'production'
+        ? ''
+        : 'http://localhost:3001';
+    return `${baseUrl}/api/employees/${employeeId}/image?v=${imageVersion}`;
+  }
+
+  /**
+   * Handle the drag-and-drop to move employees between departments
+   */
+  async function onDragEnd(result) {
     const { draggableId, destination, source } = result;
     if (!destination || destination.droppableId === source.droppableId) {
       return;
     }
 
-    const originalEmployees = [...employees];
+    const original = [...employees];
     try {
-      // Update UI optimistically
-      const updatedEmployees = employees.map((emp) => {
+      // Immediate UI update
+      const updated = employees.map((emp) => {
         if (emp.ID_Employee.toString() === draggableId) {
           return { ...emp, Department: destination.droppableId };
         }
         return emp;
       });
-      setEmployees(updatedEmployees);
+      setEmployees(updated);
 
       // Make API call
-      const apiUrl =
+      const baseUrl =
         process.env.NODE_ENV === 'production'
           ? `/api/employees/${draggableId}`
           : `http://localhost:3001/api/employees/${draggableId}`;
-      const response = await axios.put(apiUrl, {
+      const response = await axios.put(baseUrl, {
         Department: destination.droppableId,
       });
 
       if (response.data) {
-        // If server returns updated object, sync again
-        const serverUpdatedEmployees = employees.map((emp) => {
+        // Merge server data if needed
+        const merged = employees.map((emp) => {
           if (emp.ID_Employee.toString() === draggableId) {
             return { ...emp, ...response.data };
           }
           return emp;
         });
-        setEmployees(serverUpdatedEmployees);
+        setEmployees(merged);
       }
     } catch (error) {
-      console.error('Error updating department:', error.message);
-      // Revert
-      setEmployees(originalEmployees);
+      console.error('Error updating department:', error);
+      // revert on error
+      setEmployees(original);
       alert('Failed to update department. Please try again.');
     }
-  };
+  }
 
+  /**
+   * Group employees by department for rendering columns
+   */
   const employeesByDept = DEPARTMENTS.reduce((acc, dept) => {
     acc[dept] = employees.filter((emp) => emp.Department === dept);
     return acc;
   }, {});
-
-  const getImageUrl = (employeeId) => {
-    const baseUrl = process.env.NODE_ENV === 'production' ? '' : 'http://localhost:3001';
-    return `${baseUrl}/api/employees/${employeeId}/image?v=${imageVersion}`;
-  };
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#f2f4f7', padding: '32px' }}>
@@ -191,7 +235,6 @@ function App() {
           boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
         }}
       >
-        {/* Title */}
         <h1
           style={{
             textAlign: 'center',
@@ -199,13 +242,12 @@ function App() {
             fontSize: '2.2em',
             marginBottom: '40px',
             fontWeight: '700',
-            letterSpacing: '-0.5px',
           }}
         >
           Employee Directory
         </h1>
 
-        {/* Add Employee Form */}
+        {/* New Employee Form */}
         <div
           style={{
             background: '#fff',
@@ -223,6 +265,7 @@ function App() {
               alignItems: 'start',
             }}
           >
+            {/* Name */}
             <div style={{ display: 'flex', flexDirection: 'column' }}>
               <label
                 style={{
@@ -248,6 +291,7 @@ function App() {
               />
             </div>
 
+            {/* Start Date */}
             <div style={{ display: 'flex', flexDirection: 'column' }}>
               <label
                 style={{
@@ -274,6 +318,7 @@ function App() {
               />
             </div>
 
+            {/* Profile Image */}
             <div style={{ display: 'flex', flexDirection: 'column' }}>
               <label
                 style={{
@@ -288,6 +333,7 @@ function App() {
               <input
                 type="file"
                 accept="image/*"
+                name="File"
                 onChange={(e) => setNewEmployeeImage(e.target.files[0])}
                 style={{
                   padding: '10px 14px',
@@ -300,6 +346,7 @@ function App() {
               />
             </div>
 
+            {/* Department */}
             <div style={{ display: 'flex', flexDirection: 'column' }}>
               <label
                 style={{
@@ -352,7 +399,7 @@ function App() {
           </button>
         </div>
 
-        {/* DragDropContext */}
+        {/* Kanban Columns */}
         <DragDropContext onDragEnd={onDragEnd}>
           <div
             style={{
@@ -380,7 +427,7 @@ function App() {
                       flexDirection: 'column',
                     }}
                   >
-                    {/* Column Header */}
+                    {/* Column header */}
                     <div
                       style={{
                         backgroundColor: DEPARTMENT_COLORS[dept],
@@ -403,7 +450,7 @@ function App() {
                       </h2>
                     </div>
 
-                    {/* Cards (Employees) */}
+                    {/* Employee Cards */}
                     <div style={{ flexGrow: 1 }}>
                       {employeesByDept[dept].map((emp, index) => (
                         <Draggable
@@ -420,7 +467,9 @@ function App() {
                                 userSelect: 'none',
                                 padding: '16px',
                                 marginBottom: '12px',
-                                backgroundColor: snapshot.isDragging ? '#f3f4f6' : '#fff',
+                                backgroundColor: snapshot.isDragging
+                                  ? '#f3f4f6'
+                                  : '#fff',
                                 border: '1px solid #e2e8f0',
                                 borderRadius: '8px',
                                 boxShadow: snapshot.isDragging
@@ -430,11 +479,12 @@ function App() {
                                 ...provided.draggableProps.style,
                               }}
                             >
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                {/* Avatar */}
+                              <div
+                                style={{ display: 'flex', alignItems: 'center', gap: '12px' }}
+                              >
                                 <img
                                   src={getImageUrl(emp.ID_Employee)}
-                                  alt=""
+                                  alt="Employee"
                                   style={{
                                     width: '40px',
                                     height: '40px',
@@ -442,7 +492,6 @@ function App() {
                                     objectFit: 'cover',
                                     backgroundColor: '#f9fafb',
                                     border: '2px solid #fff',
-                                    display: 'block',
                                   }}
                                   onClick={(e) => {
                                     e.stopPropagation();
@@ -450,11 +499,11 @@ function App() {
                                     setImagePreviewOpen(true);
                                   }}
                                   onError={(e) => {
+                                    console.log('Image load error, using default placeholder');
                                     e.target.src = DEFAULT_IMAGE;
                                   }}
                                 />
-
-                                {/* Name & Date */}
+                                {/* Name + date */}
                                 <div>
                                   <div style={{ fontSize: '0.95em', fontWeight: '600' }}>
                                     {emp.EmployeeName}
@@ -473,7 +522,7 @@ function App() {
                                 </div>
                               </div>
 
-                              {/* Action Buttons */}
+                              {/* Edit + Delete Buttons */}
                               <div
                                 style={{
                                   display: 'flex',
@@ -489,7 +538,9 @@ function App() {
                                     setEditName(emp.EmployeeName);
                                     setEditStartDate(
                                       emp.StartDate
-                                        ? new Date(emp.StartDate).toISOString().split('T')[0]
+                                        ? new Date(emp.StartDate)
+                                            .toISOString()
+                                            .split('T')[0]
                                         : ''
                                     );
                                     setEditModalOpen(true);
@@ -516,11 +567,11 @@ function App() {
                                       )
                                     ) {
                                       try {
-                                        const apiUrl =
+                                        const baseUrl =
                                           process.env.NODE_ENV === 'production'
                                             ? `/api/employees/${emp.ID_Employee}`
                                             : `http://localhost:3001/api/employees/${emp.ID_Employee}`;
-                                        await axios.delete(apiUrl);
+                                        await axios.delete(baseUrl);
                                         fetchEmployees();
                                       } catch (error) {
                                         console.error('Error deleting employee:', error);
@@ -639,7 +690,11 @@ function App() {
               boxShadow: '0 5px 20px rgba(0,0,0,0.2)',
             }}
           >
-            <h2 style={{ marginTop: 0, marginBottom: '16px', fontSize: '1.25em' }}>Edit Employee</h2>
+            <h2 style={{ marginTop: 0, marginBottom: '16px', fontSize: '1.25em' }}>
+              Edit Employee
+            </h2>
+
+            {/* Existing image preview + file upload */}
             <div style={{ marginBottom: '16px', textAlign: 'center' }}>
               <img
                 src={getImageUrl(editingEmployee.ID_Employee)}
@@ -663,9 +718,12 @@ function App() {
                   const file = e.target.files[0];
                   if (file) {
                     try {
+                      // Upload the new file
                       await uploadImage(editingEmployee.ID_Employee, file);
-                      setImageVersion(Date.now()); // Force immediate image refresh
-                    } catch (error) {
+                      // Re-fetch employees & bust cache
+                      await fetchEmployees();
+                      setImageVersion(Date.now());
+                    } catch (err) {
                       alert('Failed to upload image. Please try again.');
                     }
                   }
@@ -677,7 +735,7 @@ function App() {
               />
             </div>
 
-            {/* Name */}
+            {/* Name field */}
             <div style={{ marginBottom: '10px' }}>
               <label
                 style={{ display: 'block', marginBottom: '4px', fontSize: '0.85em', fontWeight: '600' }}
@@ -698,7 +756,7 @@ function App() {
               />
             </div>
 
-            {/* Date */}
+            {/* Date field */}
             <div style={{ marginBottom: '16px' }}>
               <label
                 style={{ display: 'block', marginBottom: '4px', fontSize: '0.85em', fontWeight: '600' }}
@@ -720,7 +778,7 @@ function App() {
               />
             </div>
 
-            {/* Action Buttons */}
+            {/* Save + Cancel */}
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
               <button
                 onClick={() => setEditModalOpen(false)}
@@ -738,11 +796,11 @@ function App() {
               <button
                 onClick={async () => {
                   try {
-                    const apiUrl =
+                    const baseUrl =
                       process.env.NODE_ENV === 'production'
                         ? `/api/employees/${editingEmployee.ID_Employee}`
                         : `http://localhost:3001/api/employees/${editingEmployee.ID_Employee}`;
-                    await axios.put(apiUrl, {
+                    await axios.put(baseUrl, {
                       EmployeeName: editName,
                       StartDate: editStartDate || null,
                     });
