@@ -115,7 +115,18 @@ app.post('/api/employees', async (req, res) => {
         }
       });
       
-      return axios(config);
+      // Create the employee and get the response
+      const response = await axios(config);
+      console.log('Create employee response:', JSON.stringify(response.data, null, 2));
+      
+      // The response should contain the newly created record in Result[0]
+      if (!response.data?.Result?.length) {
+        throw new Error('No data returned from employee creation');
+      }
+      
+      const newEmployee = response.data.Result[0];
+      console.log('Returning new employee:', newEmployee);
+      return newEmployee;
     });
     return res.json(data);
   } catch (error) {
@@ -141,8 +152,49 @@ if (!fs.existsSync('uploads')) {
   fs.mkdirSync('uploads');
 }
 
+// Update file info
+app.put('/api/employees/:pk/image/fileinfo', async (req, res) => {
+  try {
+    const { pk } = req.params;
+    const { FileName } = req.body;
+
+    console.log('Updating file info for employee:', pk);
+    console.log('File name:', FileName);
+
+    // First, update the record with the filename
+    const recordUrl = `${API_BASE_URL}/tables/${TABLE_NAME}/records`;
+    const response = await tokenManager.handleRequest(async () => {
+      const config = await tokenManager.createAuthenticatedRequest({
+        method: 'put',
+        url: recordUrl,
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        data: {
+          Image: FileName
+        },
+        params: {
+          'q.where': `ID_Employee=${pk}`
+        }
+      });
+      
+      return axios(config);
+    });
+
+    console.log('File info update response:', response.data);
+    return res.json({ success: true });
+  } catch (error) {
+    console.error('Update file info error:', error.message);
+    if (error.response) {
+      console.error('Error response:', error.response.data);
+    }
+    return res.status(500).json({ error: error.message });
+  }
+});
+
 // UPLOAD employee image
-app.put('/api/employees/:pk/image', upload.single('image'), async (req, res) => {
+app.put('/api/employees/:pk/image', upload.single('File'), async (req, res) => {
   try {
     const { pk } = req.params;
 
@@ -152,28 +204,42 @@ app.put('/api/employees/:pk/image', upload.single('image'), async (req, res) => 
 
     const url = `${API_BASE_URL}/tables/${TABLE_NAME}/attachments/Image/${pk}`;
 
-    // Create form data
-    const form = new FormData();
-    form.append('File', fs.createReadStream(req.file.path), {
+    console.log('Starting image upload for employee:', pk);
+    console.log('File details:', {
       filename: req.file.originalname,
-      contentType: req.file.mimetype
+      contentType: req.file.mimetype,
+      size: req.file.size
     });
 
     const response = await tokenManager.handleRequest(async () => {
+      const form = new FormData();
+      form.append('File', fs.createReadStream(req.file.path), {
+        filename: req.file.originalname,
+        contentType: req.file.mimetype
+      });
+
       const config = await tokenManager.createAuthenticatedRequest({
         method: 'put',
         url,
-        headers: form.getHeaders(),
+        headers: {
+          ...form.getHeaders(),
+          'Accept': 'application/json'
+        },
         data: form,
         maxContentLength: Infinity,
-        maxBodyLength: Infinity,
-        validateStatus: (status) => status === 200 || status === 204
+        maxBodyLength: Infinity
+      });
+      
+      console.log('Uploading image with config:', {
+        url: config.url,
+        method: config.method,
+        headers: config.headers
       });
       
       return axios(config);
     });
 
-    console.log('Upload successful with status:', response.status);
+    console.log('Upload response:', response.data);
 
     // Clean up: delete the temporary file
     fs.unlink(req.file.path, (err) => {
@@ -188,13 +254,6 @@ app.put('/api/employees/:pk/image', upload.single('image'), async (req, res) => 
       console.error('Response status:', error.response.status);
       console.error('Response headers:', error.response.headers);
       console.error('Response data:', error.response.data);
-    }
-    if (error.request) {
-      console.error('Request details:', {
-        method: error.request.method,
-        path: error.request.path,
-        headers: error.request.headers
-      });
     }
 
     // Clean up temp file on error
@@ -278,12 +337,23 @@ app.get('/api/employees/:pk/image', async (req, res) => {
         headers: {
           'accept': '*/*'
         },
-        responseType: 'stream'
+        responseType: 'stream',
+        validateStatus: function (status) {
+          return status >= 200 && status < 300 || status === 404;
+        }
       });
       
       return axios(config);
     });
 
+    if (response.status === 404) {
+      // If image not found, return default image or 404
+      return res.status(404).json({ error: 'Image not found' });
+    }
+
+    // Set proper content type header based on response
+    res.set('Content-Type', response.headers['content-type']);
+    
     // Forward the image stream to client
     response.data.pipe(res);
   } catch (error) {
@@ -291,6 +361,10 @@ app.get('/api/employees/:pk/image', async (req, res) => {
     if (error.response) {
       console.error('Error status:', error.response.status);
       console.error('Error data:', error.response.data);
+      return res.status(error.response.status).json({ 
+        error: error.message,
+        details: error.response.data
+      });
     }
     return res.status(500).json({ error: error.message });
   }
