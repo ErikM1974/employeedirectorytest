@@ -30,6 +30,7 @@ function App() {
   const [newEmployeeDept, setNewEmployeeDept] = useState(DEPARTMENTS[0]);
   const [newEmployeeStartDate, setNewEmployeeStartDate] = useState('');
   const [newEmployeeImage, setNewEmployeeImage] = useState(null);
+  const [imageVersion, setImageVersion] = useState(Date.now());
 
   // Edit modal state
   const [editModalOpen, setEditModalOpen] = useState(false);
@@ -87,14 +88,7 @@ function App() {
             await axios.post(apiUrlImg, formData, {
               headers: { 'Content-Type': 'multipart/form-data' },
             });
-            
-            // Force refresh of all employee images
-            setTimeout(() => {
-              const timestamp = new Date().getTime();
-              document.querySelectorAll('img[src*="/api/employees/"]').forEach((img) => {
-                img.src = `${img.src.split('?')[0]}?t=${timestamp}`;
-              });
-            }, 100);
+            setImageVersion(Date.now());
           } catch (imageError) {
             console.error('Error uploading image:', imageError);
           }
@@ -108,14 +102,6 @@ function App() {
       if (fileInput) fileInput.value = '';
 
       await fetchEmployees();
-      
-      // Refresh images again after fetching employees
-      setTimeout(() => {
-        const timestamp = new Date().getTime();
-        document.querySelectorAll('img[src*="/api/employees/"]').forEach((img) => {
-          img.src = `${img.src.split('?')[0]}?t=${timestamp}`;
-        });
-      }, 100);
     } catch (error) {
       console.error('Error creating employee:', error.message);
       if (error.response?.data?.error) {
@@ -174,6 +160,11 @@ function App() {
     acc[dept] = employees.filter((emp) => emp.Department === dept);
     return acc;
   }, {});
+
+  const getImageUrl = (employeeId) => {
+    const baseUrl = process.env.NODE_ENV === 'production' ? '' : 'http://localhost:3001';
+    return `${baseUrl}/api/employees/${employeeId}/image?v=${imageVersion}`;
+  };
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#f2f4f7', padding: '32px' }}>
@@ -434,11 +425,7 @@ function App() {
                               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                                 {/* Avatar */}
                                 <img
-                                  src={`${
-                                    process.env.NODE_ENV === 'production'
-                                      ? ''
-                                      : 'http://localhost:3001'
-                                  }/api/employees/${emp.ID_Employee}/image`}
+                                  src={getImageUrl(emp.ID_Employee)}
                                   alt=""
                                   style={{
                                     width: '40px',
@@ -590,9 +577,7 @@ function App() {
             onClick={(e) => e.stopPropagation()}
           >
             <img
-              src={`${
-                process.env.NODE_ENV === 'production' ? '' : 'http://localhost:3001'
-              }/api/employees/${previewEmployee.ID_Employee}/image`}
+              src={getImageUrl(previewEmployee.ID_Employee)}
               alt={previewEmployee.EmployeeName}
               style={{ maxWidth: '100%', maxHeight: '80vh', objectFit: 'contain' }}
             />
@@ -646,9 +631,7 @@ function App() {
             <h2 style={{ marginTop: 0, marginBottom: '16px', fontSize: '1.25em' }}>Edit Employee</h2>
             <div style={{ marginBottom: '16px', textAlign: 'center' }}>
               <img
-                src={`${
-                  process.env.NODE_ENV === 'production' ? '' : 'http://localhost:3001'
-                }/api/employees/${editingEmployee.ID_Employee}/image`}
+                src={getImageUrl(editingEmployee.ID_Employee)}
                 alt=""
                 style={{
                   width: '90px',
@@ -680,14 +663,7 @@ function App() {
                         { headers: { 'Content-Type': 'multipart/form-data' } }
                       );
                       await fetchEmployees();
-
-                      // Force a quick refresh of all images
-                      setTimeout(() => {
-                        const timestamp = new Date().getTime();
-                        document.querySelectorAll('img[src*="/api/employees/"]').forEach((img) => {
-                          img.src = `${img.src.split('?')[0]}?t=${timestamp}`;
-                        });
-                      }, 100);
+                      setImageVersion(Date.now());
                     } catch (error) {
                       console.error('Error uploading image:', error);
                       alert('Failed to upload image. Please try again.');
@@ -771,13 +747,6 @@ function App() {
                       StartDate: editStartDate || null,
                     });
                     await fetchEmployees();
-
-                    // Quick image refresh
-                    const timestamp = new Date().getTime();
-                    document.querySelectorAll('img[src*="/api/employees/"]').forEach((img) => {
-                      img.src = `${img.src.split('?')[0]}?t=${timestamp}`;
-                    });
-
                     setEditModalOpen(false);
                   } catch (error) {
                     console.error('Error updating employee:', error);
