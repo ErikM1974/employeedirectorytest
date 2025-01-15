@@ -210,13 +210,18 @@ function App() {
           boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.05)'
         }}>
           <div style={{ 
-            maxWidth: '900px',
+            maxWidth: '800px',
             margin: '0 auto',
-            display: 'grid',
-            gridTemplateColumns: 'repeat(2, 1fr)',
-            gap: '24px',
-            alignItems: 'start'
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '24px'
           }}>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(2, 1fr)',
+              gap: '24px',
+              alignItems: 'start'
+            }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 <label style={{ 
                   fontSize: '0.9em',
@@ -322,27 +327,23 @@ function App() {
               ))}
             </select>
             </div>
+            </div>
             <button 
-            onClick={createEmployee}
-            style={{
-              padding: '14px 28px',
-              borderRadius: '12px',
-              border: 'none',
-              background: 'linear-gradient(135deg, #1a73e8, #1557b0)',
-              color: 'white',
-              fontSize: '15px',
-              fontWeight: '600',
-              cursor: 'pointer',
-              transition: 'all 0.3s ease',
-              boxShadow: '0 4px 12px rgba(26,115,232,0.3)',
-              transform: 'translateY(0)',
-              height: '48px',
-              marginTop: '24px',
-              gridColumn: 'span 2',
-              justifySelf: 'center',
-              width: '200px',
-              marginTop: '32px'
-            }}
+              onClick={createEmployee}
+              style={{
+                padding: '14px 28px',
+                borderRadius: '12px',
+                border: 'none',
+                background: 'linear-gradient(135deg, #1a73e8, #1557b0)',
+                color: 'white',
+                fontSize: '15px',
+                fontWeight: '600',
+                cursor: 'pointer',
+                transition: 'all 0.3s ease',
+                boxShadow: '0 4px 12px rgba(26,115,232,0.3)',
+                alignSelf: 'center',
+                width: '200px'
+              }}
             >
               Add Employee
             </button>
@@ -458,7 +459,7 @@ function App() {
                                   )}
                                 </div>
                               </div>
-                              <div style={{ display: 'flex', gap: '8px' }}>
+                              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                                 <button
                                   onClick={(e) => {
                                     e.stopPropagation();
@@ -468,7 +469,8 @@ function App() {
                                     setEditModalOpen(true);
                                   }}
                                   style={{
-                                    padding: '8px 16px',
+                                    padding: '8px 12px',
+                                    minWidth: '80px',
                                     backgroundColor: '#fff',
                                     border: '2px solid #e2e8f0',
                                     borderRadius: '8px',
@@ -498,7 +500,8 @@ function App() {
                                     }
                                   }}
                                   style={{
-                                    padding: '8px 16px',
+                                    padding: '8px 12px',
+                                    minWidth: '80px',
                                     background: 'linear-gradient(135deg, #ef4444, #dc2626)',
                                     color: 'white',
                                     border: 'none',
