@@ -184,7 +184,7 @@ function App() {
       <div style={{ 
         maxWidth: '1400px',
         margin: '0 auto',
-        padding: '40px',
+          padding: '48px',
         backgroundColor: 'white',
         borderRadius: '24px',
         boxShadow: '0 10px 25px -5px rgba(0,0,0,0.05), 0 8px 10px -6px rgba(0,0,0,0.02)'
@@ -210,7 +210,7 @@ function App() {
           boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.05)'
         }}>
           <div style={{ 
-            maxWidth: '700px',
+            maxWidth: '680px',
             margin: '0 auto',
             display: 'flex',
             flexDirection: 'column',
@@ -219,7 +219,7 @@ function App() {
             <div style={{
               display: 'grid',
               gridTemplateColumns: 'repeat(2, 1fr)',
-              gap: '32px',
+              gap: '24px',
               alignItems: 'start'
             }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -235,7 +235,7 @@ function App() {
                   onChange={(e) => setNewEmployeeName(e.target.value)}
                   style={{
                     padding: '12px 16px',
-                    height: '48px',
+                height: '44px',
                     borderRadius: '12px',
                     border: '2px solid #e1e4e8',
                     fontSize: '15px',
@@ -258,7 +258,7 @@ function App() {
                   onChange={(e) => setNewEmployeeStartDate(e.target.value)}
                   style={{
                     padding: '12px 16px',
-                    height: '48px',
+                height: '44px',
                     borderRadius: '12px',
                     border: '2px solid #e1e4e8',
                     fontSize: '15px',
@@ -284,7 +284,7 @@ function App() {
                 style={{
                   position: 'relative',
                   padding: '12px 16px',
-                  height: '48px',
+                height: '44px',
                   borderRadius: '12px',
                   border: '2px solid #e1e4e8',
                   fontSize: '14px',
@@ -308,7 +308,7 @@ function App() {
               onChange={(e) => setNewEmployeeDept(e.target.value)}
               style={{
                 padding: '12px 16px',
-                height: '48px',
+                height: '44px',
                 borderRadius: '12px',
                 border: '2px solid #e1e4e8',
                 fontSize: '15px',
@@ -347,8 +347,8 @@ function App() {
                 boxShadow: '0 4px 12px rgba(26,115,232,0.3)',
                 alignSelf: 'center',
                 width: '200px',
-                height: '48px',
-                marginTop: '16px'
+                height: '44px',
+                marginTop: '24px'
               }}
             >
               Add Employee
