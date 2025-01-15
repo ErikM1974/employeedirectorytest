@@ -177,114 +177,168 @@ function App() {
   return (
     <div style={{ 
       minHeight: '100vh',
-      backgroundColor: '#f8f9fa',
-      padding: '20px'
+      backgroundColor: '#f0f2f5',
+      padding: '32px 20px',
+      fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
     }}>
       <div style={{ 
-        maxWidth: '1400px', 
+        maxWidth: '1400px',
         margin: '0 auto',
-        padding: '30px',
+        padding: '40px',
         backgroundColor: 'white',
-        borderRadius: '16px',
-        boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06)'
+        borderRadius: '24px',
+        boxShadow: '0 10px 25px -5px rgba(0,0,0,0.05), 0 8px 10px -6px rgba(0,0,0,0.02)'
       }}>
         <h1 style={{ 
-          textAlign: 'center', 
+          textAlign: 'center',
           color: '#1a73e8',
-          fontSize: '2.5em',
-          marginBottom: '40px',
-          fontWeight: '600',
-          letterSpacing: '-0.5px'
+          fontSize: '2.8em',
+          marginBottom: '50px',
+          fontWeight: '700',
+          letterSpacing: '-1px',
+          background: 'linear-gradient(135deg, #1a73e8, #0d47a1)',
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent'
         }}>Employee Directory</h1>
 
         {/* Add new employee form */}
         <div style={{ 
-          marginBottom: '40px',
+          marginBottom: '50px',
           display: 'flex',
-          gap: '12px',
+          gap: '16px',
           justifyContent: 'center',
           alignItems: 'center',
-          flexWrap: 'wrap'
+          flexWrap: 'wrap',
+          background: 'linear-gradient(to bottom, #ffffff, #f8faff)',
+          padding: '24px',
+          borderRadius: '16px',
+          boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.05)'
         }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', alignItems: 'center' }}>
-            <div style={{ display: 'flex', gap: '10px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', alignItems: 'center' }}>
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label style={{ 
+                  fontSize: '0.9em',
+                  color: '#475569',
+                  fontWeight: '500',
+                  marginLeft: '4px'
+                }}>Employee Name</label>
+                <input
+                  type="text"
+                  value={newEmployeeName}
+                  onChange={(e) => setNewEmployeeName(e.target.value)}
+                  style={{
+                    padding: '14px 18px',
+                    borderRadius: '12px',
+                    border: '2px solid #e1e4e8',
+                    fontSize: '15px',
+                    width: '240px',
+                    transition: 'all 0.2s ease',
+                    outline: 'none'
+                  }}
+                />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label style={{ 
+                  fontSize: '0.9em',
+                  color: '#475569',
+                  fontWeight: '500',
+                  marginLeft: '4px'
+                }}>Start Date</label>
+                <input
+                  type="date"
+                  value={newEmployeeStartDate}
+                  onChange={(e) => setNewEmployeeStartDate(e.target.value)}
+                  style={{
+                    padding: '14px 18px',
+                    borderRadius: '12px',
+                    border: '2px solid #e1e4e8',
+                    fontSize: '15px',
+                    width: '180px',
+                    transition: 'all 0.2s ease',
+                    outline: 'none',
+                    cursor: 'pointer',
+                    color: '#2c3e50'
+                  }}
+                />
+              </div>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', width: '100%' }}>
+              <label style={{ 
+                fontSize: '0.9em',
+                color: '#475569',
+                fontWeight: '500',
+                marginLeft: '4px'
+              }}>Profile Image</label>
               <input
-                type="text"
-                placeholder="Employee Name"
-                value={newEmployeeName}
-                onChange={(e) => setNewEmployeeName(e.target.value)}
+                type="file"
+                accept="image/*"
+                onChange={(e) => setNewEmployeeImage(e.target.files[0])}
                 style={{
-                  padding: '12px 16px',
-                  borderRadius: '8px',
-                  border: '1px solid #e1e4e8',
-                  fontSize: '15px',
-                  width: '220px',
-                  transition: 'border-color 0.2s',
-                  outline: 'none'
-                }}
-              />
-              <input
-                type="date"
-                value={newEmployeeStartDate}
-                onChange={(e) => setNewEmployeeStartDate(e.target.value)}
-                style={{
-                  padding: '12px 16px',
-                  borderRadius: '8px',
-                  border: '1px solid #e1e4e8',
-                  fontSize: '15px',
-                  width: '160px',
-                  transition: 'border-color 0.2s',
-                  outline: 'none'
+                  position: 'relative',
+                  padding: '14px 18px',
+                  borderRadius: '12px',
+                  border: '2px solid #e1e4e8',
+                  fontSize: '14px',
+                  width: '300px',
+                  backgroundColor: '#fff',
+                  color: '#475569',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease'
                 }}
               />
             </div>
-            <input
-              type="file"
-              accept="image/*"
-              onChange={(e) => setNewEmployeeImage(e.target.files[0])}
-              style={{
-                padding: '8px',
-                borderRadius: '8px',
-                border: '1px solid #e1e4e8',
-                fontSize: '14px',
-                width: '300px'
-              }}
-            />
           </div>
-          <select
-            value={newEmployeeDept}
-            onChange={(e) => setNewEmployeeDept(e.target.value)}
-            style={{
-              padding: '12px 16px',
-              borderRadius: '8px',
-              border: '1px solid #e1e4e8',
-              fontSize: '15px',
-              backgroundColor: 'white',
-              transition: 'border-color 0.2s',
-              outline: 'none',
-              cursor: 'pointer'
-            }}
-          >
-            {DEPARTMENTS.map(dept => (
-              <option key={dept} value={dept}>{dept}</option>
-            ))}
-          </select>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <label style={{ 
+              fontSize: '0.9em',
+              color: '#475569',
+              fontWeight: '500',
+              marginLeft: '4px'
+            }}>Department</label>
+            <select
+              value={newEmployeeDept}
+              onChange={(e) => setNewEmployeeDept(e.target.value)}
+              style={{
+                padding: '14px 18px',
+                borderRadius: '12px',
+                border: '2px solid #e1e4e8',
+                fontSize: '15px',
+                backgroundColor: 'white',
+                transition: 'all 0.2s ease',
+                outline: 'none',
+                cursor: 'pointer',
+                color: '#2c3e50',
+                minWidth: '200px',
+                appearance: 'none',
+                backgroundImage: 'url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23007CB2%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E")',
+                backgroundRepeat: 'no-repeat',
+                backgroundPosition: 'right 12px top 50%',
+                backgroundSize: '12px auto',
+                paddingRight: '40px'
+              }}
+            >
+              {DEPARTMENTS.map(dept => (
+                <option key={dept} value={dept}>{dept}</option>
+              ))}
+            </select>
+          </div>
           <button 
             onClick={createEmployee}
             style={{
-              padding: '12px 24px',
-              borderRadius: '8px',
+              padding: '14px 28px',
+              borderRadius: '12px',
               border: 'none',
-              backgroundColor: '#1a73e8',
+              background: 'linear-gradient(135deg, #1a73e8, #1557b0)',
               color: 'white',
               fontSize: '15px',
-              fontWeight: '500',
+              fontWeight: '600',
               cursor: 'pointer',
-              transition: 'all 0.2s',
-              boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+              transition: 'all 0.3s ease',
+              boxShadow: '0 4px 12px rgba(26,115,232,0.3)',
+              transform: 'translateY(0)',
+              marginTop: '24px'
             }}
-            onMouseOver={(e) => e.target.style.backgroundColor = '#1976D2'}
-            onMouseOut={(e) => e.target.style.backgroundColor = '#2196F3'}
           >
             Add Employee
           </button>
@@ -294,7 +348,7 @@ function App() {
         <DragDropContext onDragEnd={onDragEnd}>
           <div style={{ 
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
             gap: '24px',
             padding: '10px 0'
           }}>
@@ -306,25 +360,26 @@ function App() {
                     {...provided.droppableProps}
                     style={{
                       backgroundColor: '#fff',
-                      borderRadius: '12px',
-                      padding: '20px',
-                      boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
-                      border: `2px solid ${DEPARTMENT_COLORS[dept]}`,
+                      borderRadius: '16px',
+                      padding: '24px',
+                      boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03)',
+                      border: `2px solid ${DEPARTMENT_COLORS[dept]}20`,
                       minHeight: '400px',
-                      transition: 'box-shadow 0.3s'
+                      transition: 'all 0.3s ease'
                     }}
                   >
                     <h2 style={{ 
-                      margin: '0 0 20px 0',
-                      padding: '12px 16px',
-                      backgroundColor: DEPARTMENT_COLORS[dept],
+                      margin: '0 0 24px 0',
+                      padding: '16px 20px',
+                      background: `linear-gradient(135deg, ${DEPARTMENT_COLORS[dept]}, ${DEPARTMENT_COLORS[dept]}dd)`,
                       color: 'white',
-                      borderRadius: '8px',
-                      fontSize: '1.1em',
+                      borderRadius: '12px',
+                      fontSize: '1.2em',
                       fontWeight: '600',
                       textAlign: 'center',
                       letterSpacing: '0.5px',
-                      boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                      textTransform: 'uppercase'
                     }}>{dept}</h2>
                     {employeesByDept[dept].map((emp, index) => (
                       <Draggable
@@ -339,32 +394,34 @@ function App() {
                             {...provided.draggableProps}
                             style={{
                               userSelect: 'none',
-                              padding: '16px',
-                              margin: '0 0 12px 0',
-                              backgroundColor: snapshot.isDragging ? '#f8f9fa' : 'white',
-                              border: '1px solid #eaecef',
-                              borderRadius: '10px',
+                              padding: '20px',
+                              margin: '0 0 16px 0',
+                              backgroundColor: snapshot.isDragging ? '#f8faff' : 'white',
+                              border: '1px solid #eef2f7',
+                              borderRadius: '14px',
                               boxShadow: snapshot.isDragging 
-                                ? '0 8px 16px rgba(0,0,0,0.1)' 
-                                : '0 2px 4px rgba(0,0,0,0.05)',
-                              transition: 'all 0.3s ease',
+                                ? '0 12px 24px rgba(0,0,0,0.15)' 
+                                : '0 2px 4px rgba(0,0,0,0.02)',
+                              transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+                              transform: snapshot.isDragging ? 'scale(1.02)' : 'scale(1)',
                               ...provided.draggableProps.style
                             }}
                           >
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                                 <img 
-                  src={`${process.env.NODE_ENV === 'production' ? '' : 'http://localhost:3001'}/api/employees/${emp.ID_Employee}/image`}
+                                  src={`${process.env.NODE_ENV === 'production' ? '' : 'http://localhost:3001'}/api/employees/${emp.ID_Employee}/image`}
                                   alt=""
                                   style={{
-                                    width: '45px',
-                                    height: '45px',
+                                    width: '48px',
+                                    height: '48px',
                                     borderRadius: '50%',
                                     objectFit: 'cover',
                                     backgroundColor: '#f8f9fa',
                                     cursor: 'pointer',
-                                    border: '2px solid #fff',
-                                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                                    border: '3px solid #fff',
+                                    boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+                                    transition: 'all 0.3s ease'
                                   }}
                                   onClick={(e) => {
                                     e.stopPropagation();
@@ -376,54 +433,59 @@ function App() {
                                   }}
                                 />
                                 <div>
-                                  <div>{emp.EmployeeName}</div>
+                                  <div style={{
+                                    fontSize: '1.05em',
+                                    fontWeight: '500',
+                                    color: '#2c3e50'
+                                  }}>{emp.EmployeeName}</div>
                                   {emp.StartDate && (
                                     <div style={{ 
-                                      fontSize: '0.8em', 
-                                      color: '#666',
-                                      backgroundColor: '#f5f5f5',
-                                      padding: '2px 6px',
-                                      borderRadius: '3px',
-                                      marginTop: '4px'
+                                      fontSize: '0.85em', 
+                                      color: '#64748b',
+                                      backgroundColor: '#f1f5f9',
+                                      padding: '4px 8px',
+                                      borderRadius: '6px',
+                                      marginTop: '4px',
+                                      display: 'inline-block'
                                     }}>
                                       {new Date(emp.StartDate).toLocaleDateString()}
                                     </div>
                                   )}
                                 </div>
                               </div>
-                              <div style={{ display: 'flex', gap: '5px' }}>
+                              <div style={{ display: 'flex', gap: '8px' }}>
                                 <button
                                   onClick={(e) => {
-                                    e.stopPropagation(); // Prevent drag start
+                                    e.stopPropagation();
                                     setEditingEmployee(emp);
                                     setEditName(emp.EmployeeName);
                                     setEditStartDate(emp.StartDate ? new Date(emp.StartDate).toISOString().split('T')[0] : '');
                                     setEditModalOpen(true);
                                   }}
                                   style={{
-                                    padding: '6px 12px',
-                                    backgroundColor: '#f8f9fa',
-                                    border: '1px solid #e1e4e8',
-                                    borderRadius: '6px',
+                                    padding: '8px 16px',
+                                    backgroundColor: '#fff',
+                                    border: '2px solid #e2e8f0',
+                                    borderRadius: '8px',
                                     cursor: 'pointer',
-                                    fontSize: '0.85em',
+                                    fontSize: '0.9em',
                                     fontWeight: '500',
-                                    color: '#444',
-                                    transition: 'all 0.2s'
+                                    color: '#475569',
+                                    transition: 'all 0.2s ease'
                                   }}
                                 >
                                   Edit
                                 </button>
                                 <button
                                   onClick={async (e) => {
-                                    e.stopPropagation(); // Prevent drag start
+                                    e.stopPropagation();
                                     if (window.confirm(`Are you sure you want to delete ${emp.EmployeeName}?`)) {
                                       try {
-                        const apiUrl = process.env.NODE_ENV === 'production'
-                          ? `/api/employees/${emp.ID_Employee}`
-                          : `http://localhost:3001/api/employees/${emp.ID_Employee}`;
-                        await axios.delete(apiUrl);
-                                        fetchEmployees(); // Refresh the list
+                                        const apiUrl = process.env.NODE_ENV === 'production'
+                                          ? `/api/employees/${emp.ID_Employee}`
+                                          : `http://localhost:3001/api/employees/${emp.ID_Employee}`;
+                                        await axios.delete(apiUrl);
+                                        fetchEmployees();
                                       } catch (error) {
                                         console.error('Error deleting employee:', error);
                                         alert('Failed to delete employee');
@@ -431,18 +493,17 @@ function App() {
                                     }
                                   }}
                                   style={{
-                                    padding: '6px 12px',
-                                    backgroundColor: '#dc3545',
+                                    padding: '8px 16px',
+                                    background: 'linear-gradient(135deg, #ef4444, #dc2626)',
                                     color: 'white',
                                     border: 'none',
-                                    borderRadius: '6px',
+                                    borderRadius: '8px',
                                     cursor: 'pointer',
-                                    fontSize: '0.85em',
+                                    fontSize: '0.9em',
                                     fontWeight: '500',
-                                    transition: 'all 0.2s'
+                                    transition: 'all 0.2s ease',
+                                    boxShadow: '0 2px 4px rgba(220,38,38,0.1)'
                                   }}
-                                  onMouseOver={(e) => e.target.style.backgroundColor = '#cc0000'}
-                                  onMouseOut={(e) => e.target.style.backgroundColor = '#ff4444'}
                                 >
                                   Delete
                                 </button>
@@ -468,24 +529,26 @@ function App() {
             left: 0,
             right: 0,
             bottom: 0,
-            backgroundColor: 'rgba(0,0,0,0.8)',
+            backgroundColor: 'rgba(0,0,0,0.75)',
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'center',
             zIndex: 1000,
-            cursor: 'pointer'
+            cursor: 'pointer',
+            backdropFilter: 'blur(5px)'
           }} onClick={() => setImagePreviewOpen(false)}>
             <div style={{
               position: 'relative',
               maxWidth: '90%',
               maxHeight: '90%',
               backgroundColor: 'white',
-              padding: '20px',
-              borderRadius: '8px',
-              cursor: 'default'
+              padding: '24px',
+              borderRadius: '16px',
+              cursor: 'default',
+              boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)'
             }} onClick={e => e.stopPropagation()}>
               <img 
-                src={`http://localhost:3001/api/employees/${previewEmployee.ID_Employee}/image`}
+                src={`${process.env.NODE_ENV === 'production' ? '' : 'http://localhost:3001'}/api/employees/${previewEmployee.ID_Employee}/image`}
                 alt={previewEmployee.EmployeeName}
                 style={{
                   maxWidth: '100%',
@@ -518,26 +581,37 @@ function App() {
         )}
 
         {/* Edit Modal */}
-        {editModalOpen && (
+        {editModalOpen && editingEmployee && (
           <div style={{
             position: 'fixed',
             top: 0,
             left: 0,
             right: 0,
             bottom: 0,
-            backgroundColor: 'rgba(0,0,0,0.5)',
+            backgroundColor: 'rgba(0,0,0,0.75)',
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'center',
-            zIndex: 1000
+            zIndex: 1000,
+            backdropFilter: 'blur(5px)'
           }}>
             <div style={{
               backgroundColor: 'white',
-              padding: '20px',
-              borderRadius: '8px',
-              width: '400px'
+              padding: '32px',
+              borderRadius: '20px',
+              width: '400px',
+              boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)',
+              border: '1px solid rgba(0,0,0,0.1)'
             }}>
-              <h2 style={{ marginTop: 0, marginBottom: '20px' }}>Edit Employee</h2>
+              <h2 style={{ 
+                marginTop: 0, 
+                marginBottom: '24px',
+                fontSize: '1.8em',
+                fontWeight: '700',
+                background: 'linear-gradient(135deg, #1a73e8, #1557b0)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent'
+              }}>Edit Employee</h2>
               <div style={{ 
                 marginBottom: '20px',
                 display: 'flex',
@@ -581,10 +655,8 @@ function App() {
                           }
                         );
                         
-                        // Force refresh of all employee images and data
                         await fetchEmployees();
                         
-                        // Add a small delay before refreshing images to ensure new data is loaded
                         setTimeout(() => {
                           const timestamp = new Date().getTime();
                           document.querySelectorAll('img[src*="/api/employees/"]').forEach(img => {
@@ -599,35 +671,63 @@ function App() {
                     }
                   }}
                   style={{
-                    width: '200px'
+                    width: '100%',
+                    padding: '12px 16px',
+                    borderRadius: '12px',
+                    border: '2px solid #e1e4e8',
+                    fontSize: '14px',
+                    backgroundColor: '#fff',
+                    color: '#475569',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease'
                   }}
                 />
               </div>
-              <div style={{ marginBottom: '15px' }}>
-                <label style={{ display: 'block', marginBottom: '5px' }}>Name:</label>
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ 
+                  display: 'block', 
+                  marginBottom: '6px',
+                  fontSize: '0.95em',
+                  color: '#475569',
+                  fontWeight: '500'
+                }}>Name</label>
                 <input
                   type="text"
                   value={editName}
                   onChange={(e) => setEditName(e.target.value)}
                   style={{
                     width: '100%',
-                    padding: '8px',
-                    borderRadius: '4px',
-                    border: '1px solid #ddd'
+                    padding: '12px 16px',
+                    borderRadius: '12px',
+                    border: '2px solid #e1e4e8',
+                    fontSize: '15px',
+                    transition: 'all 0.2s ease',
+                    outline: 'none'
                   }}
                 />
               </div>
-              <div style={{ marginBottom: '15px' }}>
-                <label style={{ display: 'block', marginBottom: '5px' }}>Start Date:</label>
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ 
+                  display: 'block', 
+                  marginBottom: '6px',
+                  fontSize: '0.95em',
+                  color: '#475569',
+                  fontWeight: '500'
+                }}>Start Date</label>
                 <input
                   type="date"
                   value={editStartDate}
                   onChange={(e) => setEditStartDate(e.target.value)}
                   style={{
                     width: '100%',
-                    padding: '8px',
-                    borderRadius: '4px',
-                    border: '1px solid #ddd'
+                    padding: '14px 18px',
+                    borderRadius: '12px',
+                    border: '2px solid #e1e4e8',
+                    fontSize: '15px',
+                    color: '#2c3e50',
+                    transition: 'all 0.2s ease',
+                    outline: 'none',
+                    cursor: 'pointer'
                   }}
                 />
               </div>
@@ -635,11 +735,15 @@ function App() {
                 <button
                   onClick={() => setEditModalOpen(false)}
                   style={{
-                    padding: '8px 16px',
-                    borderRadius: '4px',
-                    border: '1px solid #ddd',
-                    backgroundColor: '#f0f0f0',
-                    cursor: 'pointer'
+                    padding: '12px 24px',
+                    borderRadius: '12px',
+                    border: '2px solid #e1e4e8',
+                    backgroundColor: '#fff',
+                    color: '#666',
+                    fontSize: '15px',
+                    fontWeight: '500',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease'
                   }}
                 >
                   Cancel
@@ -655,10 +759,8 @@ function App() {
                         StartDate: editStartDate || null
                       });
                       
-                      // Refresh employee list
                       await fetchEmployees();
                       
-                      // Force refresh of all employee images
                       const timestamp = new Date().getTime();
                       document.querySelectorAll('img[src*="/api/employees/"]').forEach(img => {
                         img.src = `${img.src.split('?')[0]}?t=${timestamp}`;
@@ -671,12 +773,16 @@ function App() {
                     }
                   }}
                   style={{
-                    padding: '8px 16px',
-                    borderRadius: '4px',
+                    padding: '12px 24px',
+                    borderRadius: '12px',
                     border: 'none',
-                    backgroundColor: '#2196F3',
+                    background: 'linear-gradient(135deg, #1a73e8, #1557b0)',
                     color: 'white',
-                    cursor: 'pointer'
+                    fontSize: '15px',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s ease',
+                    boxShadow: '0 4px 12px rgba(26,115,232,0.3)'
                   }}
                 >
                   Save
