@@ -205,12 +205,12 @@ function App() {
         <div style={{ 
           marginBottom: '50px',
           background: 'linear-gradient(to bottom, #ffffff, #f8faff)',
-          padding: '32px',
+          padding: '40px',
           borderRadius: '16px',
           boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.05)'
         }}>
           <div style={{ 
-            maxWidth: '800px',
+            maxWidth: '700px',
             margin: '0 auto',
             display: 'flex',
             flexDirection: 'column',
@@ -234,7 +234,8 @@ function App() {
                   value={newEmployeeName}
                   onChange={(e) => setNewEmployeeName(e.target.value)}
                   style={{
-                    padding: '14px 18px',
+                    padding: '12px 16px',
+                    height: '48px',
                     borderRadius: '12px',
                     border: '2px solid #e1e4e8',
                     fontSize: '15px',
@@ -256,7 +257,8 @@ function App() {
                   value={newEmployeeStartDate}
                   onChange={(e) => setNewEmployeeStartDate(e.target.value)}
                   style={{
-                    padding: '14px 18px',
+                    padding: '12px 16px',
+                    height: '48px',
                     borderRadius: '12px',
                     border: '2px solid #e1e4e8',
                     fontSize: '15px',
@@ -281,7 +283,8 @@ function App() {
                 onChange={(e) => setNewEmployeeImage(e.target.files[0])}
                 style={{
                   position: 'relative',
-                  padding: '14px 18px',
+                  padding: '12px 16px',
+                  height: '48px',
                   borderRadius: '12px',
                   border: '2px solid #e1e4e8',
                   fontSize: '14px',
@@ -304,7 +307,8 @@ function App() {
               value={newEmployeeDept}
               onChange={(e) => setNewEmployeeDept(e.target.value)}
               style={{
-                padding: '14px 18px',
+                padding: '12px 16px',
+                height: '48px',
                 borderRadius: '12px',
                 border: '2px solid #e1e4e8',
                 fontSize: '15px',
@@ -331,7 +335,7 @@ function App() {
             <button 
               onClick={createEmployee}
               style={{
-                padding: '14px 28px',
+                padding: '0',
                 borderRadius: '12px',
                 border: 'none',
                 background: 'linear-gradient(135deg, #1a73e8, #1557b0)',
@@ -343,7 +347,8 @@ function App() {
                 boxShadow: '0 4px 12px rgba(26,115,232,0.3)',
                 alignSelf: 'center',
                 width: '200px',
-                marginTop: '8px'
+                height: '48px',
+                marginTop: '16px'
               }}
             >
               Add Employee
