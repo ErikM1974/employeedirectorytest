@@ -663,7 +663,7 @@ function App() {
                   if (file) {
                     try {
                       await uploadImage(editingEmployee.ID_Employee, file);
-                      await fetchEmployees();
+                      setImageVersion(Date.now()); // Force immediate image refresh
                     } catch (error) {
                       alert('Failed to upload image. Please try again.');
                     }
