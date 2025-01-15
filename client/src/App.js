@@ -214,20 +214,20 @@ function App() {
             margin: '0 auto',
             display: 'flex',
             flexDirection: 'column',
-            gap: '24px'
+            gap: '32px'
           }}>
             <div style={{
               display: 'grid',
               gridTemplateColumns: 'repeat(2, 1fr)',
-              gap: '24px',
+              gap: '32px',
               alignItems: 'start'
             }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 <label style={{ 
-                  fontSize: '0.9em',
+                  fontSize: '0.95em',
                   color: '#475569',
-                  fontWeight: '500',
-                  marginLeft: '4px'
+                  fontWeight: '600',
+                  marginBottom: '8px'
                 }}>Employee Name</label>
                 <input
                   type="text"
@@ -246,10 +246,10 @@ function App() {
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 <label style={{ 
-                  fontSize: '0.9em',
+                  fontSize: '0.95em',
                   color: '#475569',
-                  fontWeight: '500',
-                  marginLeft: '4px'
+                  fontWeight: '600',
+                  marginBottom: '8px'
                 }}>Start Date</label>
                 <input
                   type="date"
@@ -270,10 +270,10 @@ function App() {
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <label style={{ 
-                fontSize: '0.9em',
+                fontSize: '0.95em',
                 color: '#475569',
-                fontWeight: '500',
-                marginLeft: '4px'
+                fontWeight: '600',
+                marginBottom: '8px'
               }}>Profile Image</label>
               <input
                 type="file"
@@ -295,10 +295,10 @@ function App() {
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             <label style={{ 
-              fontSize: '0.9em',
+              fontSize: '0.95em',
               color: '#475569',
-              fontWeight: '500',
-              marginLeft: '4px'
+              fontWeight: '600',
+              marginBottom: '8px'
             }}>Department</label>
             <select
               value={newEmployeeDept}
@@ -342,7 +342,8 @@ function App() {
                 transition: 'all 0.3s ease',
                 boxShadow: '0 4px 12px rgba(26,115,232,0.3)',
                 alignSelf: 'center',
-                width: '200px'
+                width: '200px',
+                marginTop: '8px'
               }}
             >
               Add Employee
