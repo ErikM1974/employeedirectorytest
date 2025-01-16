@@ -426,7 +426,16 @@ We use a two-branch strategy for development and deployment:
    npm start
    ```
 
-### Production Deployment (main branch)
+### Production Deployment on Heroku
+
+#### Initial Heroku Setup
+1. Ensure you have the Heroku CLI installed and are logged in
+2. The application is configured for Heroku deployment with:
+   - Root `package.json` for build configuration
+   - `Procfile` for process management
+   - Proper environment variable setup
+
+#### Deployment Steps
 1. Prepare for Deployment
    ```bash
    # Merge develop into main
@@ -436,21 +445,54 @@ We use a two-branch strategy for development and deployment:
 
 2. Deploy to Heroku
    ```bash
-   # Deploy using our deploy script
-   npm run deploy
+   # Push to Heroku
+   git push heroku main
    ```
 
-3. Heroku Environment Setup (First Time)
+#### Heroku Configuration
+The application is configured with the following environment variables on Heroku:
+```bash
+# Required Environment Variables
+NODE_ENV=production
+TOKEN_ENDPOINT=https://c3eku948.caspio.com/oauth/token
+API_BASE_URL=https://c3eku948.caspio.com/rest/v2
+TABLE_NAME=EmployeeDirectoryTest
+CASPIO_CLIENT_ID=[your-client-id]
+CASPIO_CLIENT_SECRET=[your-client-secret]
+```
+
+#### Heroku Build Process
+1. The build process is automated through:
+   - `heroku-postbuild` script in package.json
+   - Automatic dependency installation
+   - React app build process
+   - Static file serving configuration
+
+2. The application uses:
+   - Heroku-24 stack
+   - Node.js buildpack
+   - Automatic SSL certificate management
+   - Heroku's built-in logging system
+
+#### Monitoring and Maintenance
+1. View application logs:
    ```bash
-   # Initialize Heroku
-   heroku create your-app-name
-
-   # Set environment variables
-   heroku config:set NODE_ENV=production
-   heroku config:set TOKEN_ENDPOINT=your_token_endpoint
-   heroku config:set API_BASE_URL=your_api_url
-   heroku config:set TABLE_NAME=your_table_name
+   heroku logs --tail -a employee-directory-test
    ```
+
+2. Check application status:
+   ```bash
+   heroku ps -a employee-directory-test
+   ```
+
+3. Update environment variables:
+   ```bash
+   heroku config:set VARIABLE_NAME=value -a employee-directory-test
+   ```
+
+#### Production URL
+The application is accessible at:
+https://employee-directory-test-3a10f71455d0.herokuapp.com/
 
 ### Environment Configuration
 ```bash
