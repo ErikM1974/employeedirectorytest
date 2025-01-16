@@ -94,9 +94,11 @@ function App() {
         StartDate: newEmployeeStartDate || null
       });
 
-      // Store the newly created employee and show success modal
-      setNewlyCreatedEmployee(response.data);
-      setSuccessModalOpen(true);
+      // Store the newly created employee and show edit modal
+      setEditingEmployee(response.data);
+      setEditName(response.data.EmployeeName);
+      setEditStartDate(response.data.StartDate ? new Date(response.data.StartDate).toISOString().split('T')[0] : '');
+      setEditModalOpen(true);
 
       // Clear form
       setNewEmployeeName('');
