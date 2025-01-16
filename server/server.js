@@ -8,15 +8,29 @@ const FormData = require('form-data');
 const config = require('./config/config');
 
 // Load environment variables based on NODE_ENV
+const envFile = process.env.NODE_ENV === 'production' ? '.env.production' : '.env.development';
+console.log('Loading environment from:', envFile);
 require('dotenv').config({
-  path: path.join(__dirname, `.env.${process.env.NODE_ENV || 'development'}`)
+  path: path.join(__dirname, envFile)
 });
+
+// Log environment variables in development
+if (process.env.NODE_ENV !== 'production') {
+  console.log('Loaded environment variables:', {
+    TOKEN_ENDPOINT: process.env.TOKEN_ENDPOINT,
+    API_BASE_URL: process.env.API_BASE_URL,
+    TABLE_NAME: process.env.TABLE_NAME,
+    ART_TABLE_NAME: process.env.ART_TABLE_NAME,
+    CASPIO_CLIENT_ID: process.env.CASPIO_CLIENT_ID?.substring(0, 10) + '...',
+    CASPIO_CLIENT_SECRET: process.env.CASPIO_CLIENT_SECRET?.substring(0, 10) + '...'
+  });
+}
 
 const app = express();
 
 // Configure CORS based on environment
 const corsOptions = {
-  origin: process.env.NODE_ENV === 'production' ? config.clientUrl : 'http://localhost:3000',
+  origin: process.env.NODE_ENV === 'production' ? config.clientUrl : ['http://localhost:3000', 'http://127.0.0.1:3000'],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'Content-Length', 'X-Requested-With', 'Accept'],
   exposedHeaders: ['Content-Length', 'Content-Type'],
@@ -39,18 +53,32 @@ app.options('*', (req, res) => {
 const TOKEN_ENDPOINT = process.env.TOKEN_ENDPOINT;
 const API_BASE_URL = process.env.API_BASE_URL;
 const TABLE_NAME = process.env.TABLE_NAME;
+const ART_TABLE_NAME = process.env.ART_TABLE_NAME;
 
 // -------------------------------------------------------
 // 2) Get Access Token
 // -------------------------------------------------------
 const tokenManager = require('./auth/caspioAuth');
 
+// Middleware to attach Caspio token to all requests
+app.use(async (req, res, next) => {
+  try {
+    const token = await tokenManager.getToken();
+    req.caspioToken = token;
+    next();
+  } catch (error) {
+    console.error('Error getting Caspio token:', error);
+    res.status(500).json({ error: 'Authentication failed' });
+  }
+});
+
 // Only log environment variables in development
 if (process.env.NODE_ENV !== 'production') {
   console.log('Environment Variables:', {
     TOKEN_ENDPOINT: process.env.TOKEN_ENDPOINT,
     API_BASE_URL: process.env.API_BASE_URL,
-    TABLE_NAME: process.env.TABLE_NAME
+    TABLE_NAME: process.env.TABLE_NAME,
+    ART_TABLE_NAME: process.env.ART_TABLE_NAME
   });
 }
 

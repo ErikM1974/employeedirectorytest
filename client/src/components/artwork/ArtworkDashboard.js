@@ -20,23 +20,48 @@ const ArtworkDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [imageVersion, setImageVersion] = useState(Date.now());
+  const [dateFilter, setDateFilter] = useState('30'); // Default to last 30 days
+
+  // Date filter options
+  const DATE_FILTERS = [
+    { value: '7', label: 'Last 7 days' },
+    { value: '30', label: 'Last 30 days' },
+    { value: '90', label: 'Last 90 days' },
+    { value: '180', label: 'Last 180 days' }
+  ];
 
   // Fetch artwork data
-  useEffect(() => {
-    const fetchArtwork = async () => {
-      try {
-        const response = await axios.get('/api/artwork');
-        setArtworks(response.data);
-        setLoading(false);
-      } catch (err) {
-        console.error('Error fetching artwork:', err);
-        setError('Failed to load artwork data');
-        setLoading(false);
+  const fetchArtwork = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const baseUrl = process.env.NODE_ENV === 'production'
+        ? '/api/artwork'
+        : 'http://localhost:3001/api/artwork';
+      const response = await axios.get(`${baseUrl}?days=${dateFilter}`);
+      console.log('Artwork response:', response.data); // Debug log
+      if (response.data && Array.isArray(response.data.Result)) {
+        // Transform the data to set default status if empty
+        const transformedArtworks = response.data.Result.map(artwork => ({
+          ...artwork,
+          Status: artwork.Status || 'In Progress' // Set default status if empty
+        }));
+        setArtworks(transformedArtworks);
+      } else {
+        console.error('Invalid response format:', response.data);
+        setError('Invalid data format received from server');
       }
-    };
+    } catch (err) {
+      console.error('Error fetching artwork:', err.response?.data || err.message);
+      setError(err.response?.data?.error || err.response?.data?.Message || 'Failed to load artwork data');
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchArtwork();
-  }, []);
+  }, [dateFilter]); // Re-fetch when date filter changes
 
   // Handle drag end
   const onDragEnd = async (result) => {
@@ -74,25 +99,52 @@ const ArtworkDashboard = () => {
       // Refresh data
       await fetchArtwork();
     } catch (error) {
-      console.error('Error updating status:', error);
+      console.error('Error updating status:', error.response?.data || error.message);
       setArtworks(original);
-      toast.error('Failed to update status. Please try again.');
+      toast.error(error.response?.data?.error || 'Failed to update status. Please try again.');
     }
   };
 
   // Group artworks by status
   const groupedArtworks = STATUS_COLUMNS.reduce((acc, status) => {
-    acc[status] = artworks.filter(art => art.Status === status);
+    acc[status] = artworks.filter(art => art.Status === status) || [];
     return acc;
   }, {});
 
-  if (loading) return <div className="loading">Loading artwork...</div>;
-  if (error) return <div className="error">{error}</div>;
+  if (loading) return (
+    <div className="loading">
+      <div className="spinner"></div>
+      <p>Loading artwork...</p>
+    </div>
+  );
+  
+  if (error) return (
+    <div className="error">
+      <h3>Error</h3>
+      <p>{error}</p>
+      <button onClick={fetchArtwork} className="retry-button">
+        Retry
+      </button>
+    </div>
+  );
 
   return (
     <div className="artwork-dashboard">
       <ToastContainer />
       <h1>Artwork Dashboard</h1>
+      <div className="dashboard-controls">
+        <select 
+          value={dateFilter}
+          onChange={(e) => setDateFilter(e.target.value)}
+          className="date-filter"
+        >
+          {DATE_FILTERS.map(filter => (
+            <option key={filter.value} value={filter.value}>
+              {filter.label}
+            </option>
+          ))}
+        </select>
+      </div>
       
       <DragDropContext onDragEnd={onDragEnd}>
         <div className="artwork-columns">
@@ -106,7 +158,7 @@ const ArtworkDashboard = () => {
                 >
                   <h2 style={{ color: STATUS_COLORS[status] }}>{status}</h2>
                   <div className="artwork-list">
-                    {groupedArtworks[status].map((artwork, index) => (
+                    {(groupedArtworks[status] || []).map((artwork, index) => (
                       <Draggable
                         key={artwork.ID_Design}
                         draggableId={artwork.ID_Design.toString()}
@@ -126,7 +178,9 @@ const ArtworkDashboard = () => {
                             <div className="artwork-image">
                               {artwork.File_Upload_One ? (
                                 <img 
-                                  src={`/api/artwork/${artwork.ID_Design}/image?v=${imageVersion}`}
+                                  src={process.env.NODE_ENV === 'production'
+                                    ? `/api/artwork/${artwork.ID_Design}/image?v=${imageVersion}`
+                                    : `http://localhost:3001/api/artwork/${artwork.ID_Design}/image?v=${imageVersion}`}
                                   alt={`Design for ${artwork.CompanyName}`}
                                   onError={(e) => {
                                     e.target.classList.add('error');
@@ -139,8 +193,8 @@ const ArtworkDashboard = () => {
                             </div>
                             <div className="artwork-details">
                               <h3>{artwork.CompanyName}</h3>
-                              <p>Due: {new Date(artwork.Due_Date).toLocaleDateString()}</p>
-                              <p>ID: #{artwork.ID_Design}</p>
+                              <p>Due: {artwork.Due_Date ? new Date(artwork.Due_Date).toLocaleDateString() : 'Not set'}</p>
+                              <p>Design ID: #{artwork.ID_Design}</p>
                             </div>
                           </div>
                         )}

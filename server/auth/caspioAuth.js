@@ -31,12 +31,19 @@ class TokenManager {
 
     async refreshToken() {
         try {
+            console.log('Refreshing Caspio token with:', {
+                tokenEndpoint: this.tokenEndpoint,
+                clientId: this.clientId?.substring(0, 10) + '...',
+                clientSecret: this.clientSecret?.substring(0, 10) + '...'
+            });
+
             const response = await axios.post(
                 this.tokenEndpoint,
                 'grant_type=client_credentials',
                 {
                     headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded'
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'Accept': 'application/json'
                     },
                     auth: {
                         username: this.clientId,
@@ -44,6 +51,12 @@ class TokenManager {
                     }
                 }
             );
+
+            console.log('Token response:', {
+                status: response.status,
+                hasToken: !!response.data.access_token,
+                expiresIn: response.data.expires_in
+            });
 
             this.cachedToken = response.data.access_token;
             
@@ -53,7 +66,18 @@ class TokenManager {
 
             return this.cachedToken;
         } catch (error) {
-            console.error('Error refreshing token:', error.message);
+            if (axios.isAxiosError(error)) {
+                console.error('Axios error refreshing token:', {
+                    status: error.response?.status,
+                    statusText: error.response?.statusText,
+                    data: error.response?.data,
+                    url: error.config?.url,
+                    method: error.config?.method,
+                    headers: error.config?.headers
+                });
+            } else {
+                console.error('Error refreshing token:', error.message);
+            }
             throw error;
         }
     }
@@ -65,11 +89,19 @@ class TokenManager {
                 ...config,
                 headers: {
                     ...config.headers,
-                    'Authorization': `bearer ${token}`
+                    'Authorization': `Bearer ${token}`
                 }
             };
         } catch (error) {
-            console.error('Error creating authenticated request:', error.message);
+            if (axios.isAxiosError(error)) {
+                console.error('Axios error creating authenticated request:', {
+                    status: error.response?.status,
+                    statusText: error.response?.statusText,
+                    data: error.response?.data
+                });
+            } else {
+                console.error('Error creating authenticated request:', error.message);
+            }
             throw error;
         }
     }

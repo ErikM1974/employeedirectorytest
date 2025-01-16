@@ -1,28 +1,7 @@
-feat: Complete UI overhaul for employee directory
+feat(artwork): improve sorting to prioritize due dates
 
-Major UI/UX improvements:
-
-Employee Form:
-- Added intuitive icons for name, date, and department fields
-- Enhanced input styling with better padding and typography
-- Implemented custom styled department dropdown
-- Added placeholder text for better user guidance
-- Created card-like container with consistent shadows
-
-Photo Upload:
-- Redesigned image upload UI with larger preview
-- Added modern floating "+" button for file selection
-- Implemented hidden file input with styled trigger
-- Added toast notifications for upload feedback
-- Balanced button layout with consistent styling
-
-General Enhancements:
-- Improved overall spacing and padding
-- Standardized border radius and shadow styles
-- Enhanced color scheme for better contrast
-- Added subtle hover effects on interactive elements
-- Made step indicator more prominent and clear
-- Improved mobile responsiveness
-- Enhanced visual hierarchy throughout
-
-This commit represents the final development rendition with a polished, professional look while maintaining full functionality.
+- Sort artwork records by status first
+- Within each status, sort by due date (earliest first)
+- Records without due dates appear at end of each status group
+- Use ID_Design DESC as final sort to show newest records first
+- Filter to show records with ID_Design > 52000
