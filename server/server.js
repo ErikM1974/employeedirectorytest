@@ -60,7 +60,26 @@ if (process.env.NODE_ENV !== 'production') {
 }
 
 // -------------------------------------------------------
-// 3) Routes
+// 3) Configure multer for file upload
+// -------------------------------------------------------
+const upload = multer({ 
+  storage: multer.diskStorage({
+    destination: function (req, file, cb) {
+      cb(null, 'uploads/') // Ensure this directory exists
+    },
+    filename: function (req, file, cb) {
+      cb(null, Date.now() + '-' + file.originalname)
+    }
+  })
+});
+
+// Create uploads directory if it doesn't exist
+if (!fs.existsSync('uploads')) {
+  fs.mkdirSync('uploads');
+}
+
+// -------------------------------------------------------
+// 4) Routes
 // -------------------------------------------------------
 
 // GET all employees
@@ -97,36 +116,78 @@ app.get('/api/employees', async (req, res) => {
 // CREATE new employee
 app.post('/api/employees', async (req, res) => {
   try {
+    console.log('Received request body:', req.body);
     const { EmployeeName, Department, StartDate } = req.body;
-    const url = `${API_BASE_URL}/tables/${TABLE_NAME}/records`;
+    
+    if (!EmployeeName || !Department) {
+      return res.status(400).json({ error: 'EmployeeName and Department are required' });
+    }
 
+    const url = `${API_BASE_URL}/tables/${TABLE_NAME}/records`;
     const { data } = await tokenManager.handleRequest(async () => {
-      const config = await tokenManager.createAuthenticatedRequest({
-        method: 'post',
-        url,
-        headers: {
-          'Content-Type': 'application/json',
-          'accept': 'application/json'
-        },
-        data: {
-          EmployeeName,
-          Department,
-          StartDate: StartDate || null
+      try {
+        // Create employee record
+        const createConfig = await tokenManager.createAuthenticatedRequest({
+          method: 'post',
+          url,
+          headers: {
+            'Content-Type': 'application/json',
+            'accept': 'application/json'
+          },
+          data: {
+            EmployeeName: EmployeeName.trim(),
+            Department: Department.trim(),
+            StartDate: StartDate || null
+          }
+        });
+
+        console.log('Creating employee with config:', {
+          url: createConfig.url,
+          method: createConfig.method,
+          headers: createConfig.headers,
+          data: createConfig.data
+        });
+
+        const createResponse = await axios(createConfig);
+        console.log('Create response:', createResponse.data);
+
+        // Check if Caspio returned an error
+        if (createResponse.data?.Message) {
+          throw new Error(`Caspio error: ${createResponse.data.Message}`);
         }
-      });
-      
-      // Create the employee and get the response
-      const response = await axios(config);
-      console.log('Create employee response:', JSON.stringify(response.data, null, 2));
-      
-      // The response should contain the newly created record in Result[0]
-      if (!response.data?.Result?.length) {
-        throw new Error('No data returned from employee creation');
+
+        // If successful, return the created record
+        if (createResponse.data?.Result?.[0]) {
+          return createResponse.data.Result[0];
+        }
+
+        // If no result, try to get the newly created record
+        const getConfig = await tokenManager.createAuthenticatedRequest({
+          method: 'get',
+          url,
+          headers: {
+            'Content-Type': 'application/json',
+            'accept': 'application/json'
+          },
+          params: {
+            'q.where': `EmployeeName='${EmployeeName.trim()}'`,
+            'q.sort': 'DateCreated DESC',
+            'q.limit': 1
+          }
+        });
+
+        const getResponse = await axios(getConfig);
+        console.log('Get response:', getResponse.data);
+
+        if (getResponse.data?.Result?.[0]) {
+          return getResponse.data.Result[0];
+        }
+
+        throw new Error('Failed to create employee: No record found');
+      } catch (error) {
+        console.error('Error creating employee:', error.response?.data || error.message);
+        throw error;
       }
-      
-      const newEmployee = response.data.Result[0];
-      console.log('Returning new employee:', newEmployee);
-      return newEmployee;
     });
     return res.json(data);
   } catch (error) {
@@ -134,23 +195,6 @@ app.post('/api/employees', async (req, res) => {
     return res.status(500).json({ error: error.message });
   }
 });
-
-// Configure multer for file upload
-const upload = multer({ 
-  storage: multer.diskStorage({
-    destination: function (req, file, cb) {
-      cb(null, 'uploads/') // Ensure this directory exists
-    },
-    filename: function (req, file, cb) {
-      cb(null, Date.now() + '-' + file.originalname)
-    }
-  })
-});
-
-// Create uploads directory if it doesn't exist
-if (!fs.existsSync('uploads')) {
-  fs.mkdirSync('uploads');
-}
 
 // Update file info
 app.put('/api/employees/:pk/image/fileinfo', async (req, res) => {

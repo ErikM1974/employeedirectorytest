@@ -31,24 +31,22 @@ const DEFAULT_IMAGE =
 function App() {
   const [employees, setEmployees] = useState([]);
 
-  // New employee form fields
+  // Form and modal states
   const [newEmployeeName, setNewEmployeeName] = useState('');
   const [newEmployeeDept, setNewEmployeeDept] = useState(DEPARTMENTS[0]);
   const [newEmployeeStartDate, setNewEmployeeStartDate] = useState('');
   const [newEmployeeImage, setNewEmployeeImage] = useState(null);
-
-  // We track "imageVersion" for cache-busting in the <img> src query param
   const [imageVersion, setImageVersion] = useState(Date.now());
-
-  // Edit modal state
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState(null);
   const [editName, setEditName] = useState('');
   const [editStartDate, setEditStartDate] = useState('');
-
-  // Image preview modal state
   const [imagePreviewOpen, setImagePreviewOpen] = useState(false);
   const [previewEmployee, setPreviewEmployee] = useState(null);
+
+  // Success modal state
+  const [successModalOpen, setSuccessModalOpen] = useState(false);
+  const [newlyCreatedEmployee, setNewlyCreatedEmployee] = useState(null);
 
   // Fetch employees on initial load
   useEffect(() => {
@@ -79,7 +77,7 @@ function App() {
   }
 
   /**
-   * Create a new employee, then upload the file if provided.
+   * Create a new employee (Step 1)
    */
   async function createEmployee() {
     if (!newEmployeeName) return; // Basic validation
@@ -89,26 +87,18 @@ function App() {
           ? '/api/employees'
           : 'http://localhost:3001/api/employees';
 
-      // 1) Create the employee (name, dept, date)
+      // Create employee without image first
       const response = await axios.post(baseUrl, {
         EmployeeName: newEmployeeName.trim(),
         Department: newEmployeeDept,
-        StartDate: newEmployeeStartDate || null,
+        StartDate: newEmployeeStartDate || null
       });
 
-      // The server returns the newly created record
-      const newEmpId = response.data?.ID_Employee;
-      if (!newEmpId) {
-        // fallback: if not returned properly, or check your server logs
-        throw new Error('No ID returned for new employee');
-      }
+      // Store the newly created employee and show success modal
+      setNewlyCreatedEmployee(response.data);
+      setSuccessModalOpen(true);
 
-      // 2) If user selected an image, upload it
-      if (newEmployeeImage) {
-        await uploadImage(newEmpId, newEmployeeImage);
-      }
-
-      // 3) Clear form & re-fetch employees to see new addition
+      // Clear form
       setNewEmployeeName('');
       setNewEmployeeStartDate('');
       setNewEmployeeImage(null);
@@ -117,6 +107,7 @@ function App() {
       const fileInput = document.querySelector('input[type="file"]');
       if (fileInput) fileInput.value = '';
 
+      // Refresh the employee list
       await fetchEmployees();
     } catch (error) {
       console.error('Error creating employee:', error);
@@ -247,7 +238,7 @@ function App() {
           Employee Directory
         </h1>
 
-        {/* New Employee Form */}
+        {/* New Employee Form - Step Process */}
         <div
           style={{
             background: '#fff',
@@ -257,6 +248,39 @@ function App() {
             border: '1px solid #e2e8f0',
           }}
         >
+          {/* Steps Indicator */}
+          <div style={{ marginBottom: '24px', display: 'flex', gap: '32px', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div style={{
+                width: '32px',
+                height: '32px',
+                borderRadius: '50%',
+                backgroundColor: '#1a73e8',
+                color: 'white',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontWeight: '600',
+              }}>1</div>
+              <span style={{ color: '#1a73e8', fontWeight: '500' }}>Enter Employee Info</span>
+            </div>
+            <div style={{ color: '#94a3b8', fontSize: '20px' }}>→</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div style={{
+                width: '32px',
+                height: '32px',
+                borderRadius: '50%',
+                backgroundColor: '#94a3b8',
+                color: 'white',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontWeight: '600',
+              }}>2</div>
+              <span style={{ color: '#94a3b8', fontWeight: '500' }}>Upload Photo</span>
+            </div>
+          </div>
+
           <div
             style={{
               display: 'grid',
@@ -314,34 +338,6 @@ function App() {
                   border: '1px solid #cbd5e1',
                   outline: 'none',
                   color: '#2c3e50',
-                }}
-              />
-            </div>
-
-            {/* Profile Image */}
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
-              <label
-                style={{
-                  fontSize: '0.9em',
-                  fontWeight: '500',
-                  marginBottom: '6px',
-                  color: '#475569',
-                }}
-              >
-                Profile Image
-              </label>
-              <input
-                type="file"
-                accept="image/*"
-                name="File"
-                onChange={(e) => setNewEmployeeImage(e.target.files[0])}
-                style={{
-                  padding: '10px 14px',
-                  fontSize: '14px',
-                  borderRadius: '6px',
-                  border: '1px solid #cbd5e1',
-                  outline: 'none',
-                  backgroundColor: '#fff',
                 }}
               />
             </div>
@@ -561,11 +557,7 @@ function App() {
                                 <button
                                   onClick={async (e) => {
                                     e.stopPropagation();
-                                    if (
-                                      window.confirm(
-                                        `Are you sure you want to delete ${emp.EmployeeName}?`
-                                      )
-                                    ) {
+                                    if (window.confirm(`Are you sure you want to delete ${emp.EmployeeName}?`)) {
                                       try {
                                         const baseUrl =
                                           process.env.NODE_ENV === 'production'
@@ -663,6 +655,145 @@ function App() {
               onClick={() => setImagePreviewOpen(false)}
             >
               ×
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Success Modal with Image Upload Option */}
+      {successModalOpen && newlyCreatedEmployee && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(0,0,0,0.5)',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            zIndex: 9999,
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: '#fff',
+              padding: '24px',
+              borderRadius: '12px',
+              width: '360px',
+              boxShadow: '0 5px 20px rgba(0,0,0,0.2)',
+            }}
+          >
+            <div style={{ marginBottom: '24px', textAlign: 'center' }}>
+              <div style={{ 
+                width: '120px',
+                height: '120px',
+                margin: '0 auto 16px',
+                borderRadius: '60px',
+                backgroundColor: '#f3f4f6',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                border: '2px dashed #cbd5e1'
+              }}>
+                <img
+                  src={DEFAULT_IMAGE}
+                  alt="Default"
+                  style={{
+                    width: '80px',
+                    height: '80px',
+                    opacity: 0.5
+                  }}
+                />
+              </div>
+              <h2 style={{ marginTop: 0, marginBottom: '16px', fontSize: '1.25em', color: '#10B981' }}>
+                Employee Added Successfully!
+              </h2>
+              <div style={{ color: '#475569', fontSize: '0.9em', marginBottom: '24px' }}>
+                <p><strong>Name:</strong> {newlyCreatedEmployee.EmployeeName}</p>
+                <p><strong>Department:</strong> {newlyCreatedEmployee.Department}</p>
+                {newlyCreatedEmployee.StartDate && (
+                  <p><strong>Start Date:</strong> {new Date(newlyCreatedEmployee.StartDate).toLocaleDateString()}</p>
+                )}
+              </div>
+              <div style={{ 
+                backgroundColor: '#f0f9ff',
+                padding: '16px',
+                borderRadius: '8px',
+                border: '1px solid #bae6fd',
+                marginBottom: '24px'
+              }}>
+                <h3 style={{ 
+                  fontSize: '1.1em',
+                  color: '#0369a1',
+                  marginTop: 0,
+                  marginBottom: '8px'
+                }}>
+                  Would you like to add a profile photo?
+                </h3>
+                <p style={{ 
+                  fontSize: '0.9em',
+                  color: '#0369a1',
+                  marginBottom: '16px'
+                }}>
+                  This will help identify the employee in the directory.
+                </p>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={async (e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                      try {
+                        await uploadImage(newlyCreatedEmployee.ID_Employee, file);
+                        setImageVersion(Date.now());
+                        setSuccessModalOpen(false);
+                        await fetchEmployees();
+                      } catch (err) {
+                        alert('Failed to upload image. Please try again.');
+                      }
+                    }
+                  }}
+                  style={{
+                    width: '100%',
+                    padding: '8px',
+                    marginBottom: '16px',
+                  }}
+                />
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '24px' }}>
+              <button
+                onClick={() => {
+                  setSuccessModalOpen(false);
+                  setNewlyCreatedEmployee(null);
+                }}
+                style={{
+                  padding: '8px 16px',
+                  borderRadius: '6px',
+                  border: '1px solid #cbd5e1',
+                  backgroundColor: '#fff',
+                  color: '#555',
+                  cursor: 'pointer',
+                }}
+              >
+                Skip
+              </button>
+              <button
+                onClick={() => {
+                  setSuccessModalOpen(false);
+                  setNewlyCreatedEmployee(null);
+                }}
+                style={{
+                  padding: '8px 16px',
+                  borderRadius: '6px',
+                  border: 'none',
+                  backgroundColor: '#10B981',
+                  color: '#fff',
+                  cursor: 'pointer',
+                }}
+              >
+                Done
+              </button>
             </div>
           </div>
         </div>
