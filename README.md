@@ -11,6 +11,114 @@ A web-based employee directory application built with React and Node.js that int
 - **Employee Management**: Add, edit, and delete employee records
 - **Responsive Design**: Works seamlessly across different screen sizes
 
+## System Requirements
+
+### Development Environment
+- Node.js 14.x or higher
+- npm 6.x or higher
+- Git 2.x or higher
+- Modern web browser (Chrome, Firefox, Safari, or Edge)
+- 2GB RAM minimum
+- 1GB free disk space
+
+### Production Environment
+- Node.js 14.x or higher
+- 1GB RAM minimum
+- 2GB free disk space
+- HTTPS certificate for production deployment
+- Environment variables configuration
+
+### Browser Compatibility
+- Chrome 80+
+- Firefox 75+
+- Safari 13+
+- Edge 80+
+- iOS Safari 13+
+- Chrome for Android 80+
+
+### Network Requirements
+- Stable internet connection
+- Access to Caspio API endpoints
+- Outbound HTTPS (port 443) access
+- WebSocket support for development
+
+## Troubleshooting Guide
+
+### Common Issues and Solutions
+
+#### Image Upload Issues
+1. **Image Upload Fails**
+   - Verify file size is under 5MB
+   - Check supported formats (jpg, jpeg, png, gif)
+   - Ensure "File" field name is correct
+   - Clear browser cache and retry
+
+2. **Image Not Displaying After Upload**
+   - Refresh the page
+   - Check browser console for errors
+   - Verify image URL format
+   - Clear browser cache
+
+#### Authentication Issues
+1. **Token Errors**
+   - Check Caspio credentials in .env file
+   - Verify token endpoint URL
+   - Clear local storage and refresh
+   - Check token expiration handling
+
+2. **API Access Denied**
+   - Verify API permissions in Caspio
+   - Check if token is being sent correctly
+   - Ensure correct API endpoint URLs
+
+#### Development Setup Issues
+1. **npm Install Fails**
+   - Clear npm cache: `npm cache clean --force`
+   - Delete node_modules and package-lock.json
+   - Run `npm install` again
+   - Check Node.js version compatibility
+
+2. **Server Won't Start**
+   - Check if ports 3000/3001 are available
+   - Verify all environment variables are set
+   - Check for syntax errors in recent changes
+   - Review server logs for errors
+
+#### Database Connection Issues
+1. **Cannot Connect to Caspio**
+   - Verify network connectivity
+   - Check Caspio service status
+   - Validate API credentials
+   - Review CORS settings
+
+2. **Data Not Updating**
+   - Check API response status codes
+   - Verify data format in requests
+   - Review error handling implementation
+   - Check browser console for errors
+
+### Performance Issues
+1. **Slow Loading Times**
+   - Check network connection speed
+   - Verify image sizes and formats
+   - Review browser console for warnings
+   - Check for unnecessary re-renders
+
+2. **Drag and Drop Lag**
+   - Reduce number of items per column
+   - Check browser memory usage
+   - Verify React component optimization
+   - Review event handler implementations
+
+### Quick Fixes
+- Clear browser cache and reload
+- Restart development servers
+- Check console for error messages
+- Verify environment variables
+- Review recent code changes
+- Check network connectivity
+- Validate API endpoints
+
 ## Technical Details
 
 ### Frontend (React)
@@ -38,24 +146,36 @@ A web-based employee directory application built with React and Node.js that int
 
 ## Recent Updates
 
+### Modern UI Overhaul
+- Implemented intuitive two-step employee creation process
+- Added step indicators with visual progress tracking
+- Enhanced form fields with descriptive icons
+- Improved input styling and visual hierarchy
+- Added helpful placeholder text and tooltips
+- Implemented consistent card-based layout design
+
 ### Image Upload Improvements
-- Fixed image upload functionality for instant updates
-- Added proper handling of Caspio's 204 responses
-- Implemented cache busting for immediate image refresh
-- Added better error handling and user feedback
-- Optimized image upload process
+- Redesigned image upload interface with larger preview
+- Added modern floating "+" button for file selection
+- Implemented hidden file input with styled trigger
+- Added toast notifications for upload success/failure
+- Improved image preview with better error handling
+- Added cache busting for immediate image updates
 
-### API Integration
-- Improved token management
-- Better error handling for API responses
-- Proper handling of multipart/form-data
-- Optimized API request flow
+### Enhanced User Experience
+- Added real-time feedback with toast notifications
+- Improved button styling and hover effects
+- Enhanced modal interactions and transitions
+- Implemented responsive design for all screen sizes
+- Added loading indicators for better feedback
+- Improved error messaging with clear instructions
 
-### UI Enhancements
-- Immediate visual feedback for all actions
-- Improved modal interactions
-- Better loading states
-- Enhanced error messaging
+### Performance Optimizations
+- Optimized image loading and caching
+- Improved state management for smoother updates
+- Enhanced drag-and-drop performance
+- Reduced unnecessary re-renders
+- Implemented efficient error handling
 
 ## Setup
 
@@ -102,77 +222,157 @@ The application includes comprehensive error handling:
 
 ## Caspio API Integration
 
-### Authentication
-```
-POST https://c3eku948.caspio.com/oauth/token
-```
-- Requires client credentials (ID & Secret)
-- Returns bearer token for subsequent requests
-- Token must be refreshed periodically
+### Authentication Flow
+```javascript
+// 1. Get Bearer Token
+POST ${process.env.TOKEN_ENDPOINT}
+Headers:
+  Content-Type: application/x-www-form-urlencoded
+Auth:
+  Username: ${process.env.CASPIO_CLIENT_ID}
+  Password: ${process.env.CASPIO_CLIENT_SECRET}
+Body:
+  grant_type=client_credentials
 
-### Employee Records
+Response:
+{
+  "access_token": "...",
+  "expires_in": 3600
+}
+```
+
+### Employee Records API
 
 #### List All Employees
-```
-GET https://c3eku948.caspio.com/rest/v2/tables/EmployeeDirectoryTest/records
+```javascript
+GET ${process.env.API_BASE_URL}/tables/${process.env.TABLE_NAME}/records
 Headers:
   Authorization: bearer {token}
-  Content-Type: application/json
+  Accept: application/json
+
+Response:
+{
+  "Result": [
+    {
+      "ID_Employee": number,
+      "EmployeeName": string,
+      "Department": string,
+      "StartDate": string | null
+    }
+  ]
+}
 ```
 
 #### Create Employee
-```
-POST https://c3eku948.caspio.com/rest/v2/tables/EmployeeDirectoryTest/records
+```javascript
+POST ${process.env.API_BASE_URL}/tables/${process.env.TABLE_NAME}/records
 Headers:
   Authorization: bearer {token}
   Content-Type: application/json
+  Accept: application/json
 Body:
 {
   "EmployeeName": string,
   "Department": string,
-  "StartDate": string (optional, ISO format)
+  "StartDate": string | null  // ISO format: YYYY-MM-DD
+}
+
+Response:
+{
+  "Result": [{
+    "ID_Employee": number,
+    "EmployeeName": string,
+    "Department": string,
+    "StartDate": string | null
+  }]
 }
 ```
 
 #### Update Employee
-```
-PUT https://c3eku948.caspio.com/rest/v2/tables/EmployeeDirectoryTest/records?q.where=ID_Employee={id}
+```javascript
+PUT ${process.env.API_BASE_URL}/tables/${process.env.TABLE_NAME}/records
 Headers:
   Authorization: bearer {token}
   Content-Type: application/json
+  Accept: application/json
+Query Parameters:
+  q.where=ID_Employee={id}
 Body:
 {
-  "EmployeeName": string (optional),
-  "Department": string (optional),
-  "StartDate": string (optional, ISO format)
+  "EmployeeName"?: string,
+  "Department"?: string,
+  "StartDate"?: string | null
 }
+
+Response: Status 204 No Content
 ```
 
 #### Delete Employee
-```
-DELETE https://c3eku948.caspio.com/rest/v2/tables/EmployeeDirectoryTest/records?q.where=ID_Employee={id}
+```javascript
+DELETE ${process.env.API_BASE_URL}/tables/${process.env.TABLE_NAME}/records
 Headers:
   Authorization: bearer {token}
+Query Parameters:
+  q.where=ID_Employee={id}
+
+Response: Status 204 No Content
 ```
 
-### Employee Images
+### Image Management API
 
 #### Upload Image
-```
-PUT https://c3eku948.caspio.com/rest/v2/tables/EmployeeDirectoryTest/attachments/Image/{id}
+```javascript
+PUT ${process.env.API_BASE_URL}/tables/${process.env.TABLE_NAME}/attachments/Image/{id}
 Headers:
   Authorization: bearer {token}
   Content-Type: multipart/form-data
 Body:
-  Form data with 'File' field containing image
+  Form Data:
+    File: (binary)  // Field name must be exactly "File"
+
+Response: Status 204 No Content
 ```
 
 #### Get Image
-```
-GET https://c3eku948.caspio.com/rest/v2/tables/EmployeeDirectoryTest/attachments/Image/{id}
+```javascript
+GET ${process.env.API_BASE_URL}/tables/${process.env.TABLE_NAME}/attachments/Image/{id}
 Headers:
   Authorization: bearer {token}
+  Accept: */*
+Query Parameters:
+  v={timestamp}  // Optional: For cache busting
+
+Response:
+  Content-Type: image/*
+  Body: Binary image data
 ```
+
+### Important Notes
+
+1. **Token Management**
+   - Tokens expire after 1 hour
+   - Implement automatic token refresh
+   - Handle 401 errors by refreshing token and retrying request
+
+2. **Error Handling**
+   - 400: Bad Request (invalid data format)
+   - 401: Unauthorized (token expired/invalid)
+   - 404: Resource Not Found
+   - 409: Conflict (duplicate record)
+   - 500: Server Error
+
+3. **Image Upload Requirements**
+   - Max file size: 5MB
+   - Supported formats: jpg, jpeg, png, gif
+   - Field name must be "File" (case-sensitive)
+   - Content-Type must be multipart/form-data
+
+4. **Query Parameters**
+   - q.where: SQL-like where clause
+   - q.select: Comma-separated field list
+   - q.sort: Field name with optional ASC/DESC
+   - q.limit: Maximum records (default 100)
+   - q.offset: Records to skip for pagination
 
 ### Response Codes
 - 200: Success with response body
