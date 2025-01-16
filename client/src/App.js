@@ -44,10 +44,6 @@ function App() {
   const [imagePreviewOpen, setImagePreviewOpen] = useState(false);
   const [previewEmployee, setPreviewEmployee] = useState(null);
 
-  // Success modal state
-  const [successModalOpen, setSuccessModalOpen] = useState(false);
-  const [newlyCreatedEmployee, setNewlyCreatedEmployee] = useState(null);
-
   // Fetch employees on initial load
   useEffect(() => {
     fetchEmployees();
@@ -94,7 +90,10 @@ function App() {
         StartDate: newEmployeeStartDate || null
       });
 
-      // Store the newly created employee and show edit modal
+      // Refresh the employee list first
+      await fetchEmployees();
+
+      // Then show the edit modal for the new employee
       setEditingEmployee(response.data);
       setEditName(response.data.EmployeeName);
       setEditStartDate(response.data.StartDate ? new Date(response.data.StartDate).toISOString().split('T')[0] : '');
@@ -109,8 +108,6 @@ function App() {
       const fileInput = document.querySelector('input[type="file"]');
       if (fileInput) fileInput.value = '';
 
-      // Refresh the employee list
-      await fetchEmployees();
     } catch (error) {
       console.error('Error creating employee:', error);
       alert(
@@ -657,145 +654,6 @@ function App() {
               onClick={() => setImagePreviewOpen(false)}
             >
               ×
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Success Modal with Image Upload Option */}
-      {successModalOpen && newlyCreatedEmployee && (
-        <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            backgroundColor: 'rgba(0,0,0,0.5)',
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            zIndex: 9999,
-          }}
-        >
-          <div
-            style={{
-              backgroundColor: '#fff',
-              padding: '24px',
-              borderRadius: '12px',
-              width: '360px',
-              boxShadow: '0 5px 20px rgba(0,0,0,0.2)',
-            }}
-          >
-            <div style={{ marginBottom: '24px', textAlign: 'center' }}>
-              <div style={{ 
-                width: '120px',
-                height: '120px',
-                margin: '0 auto 16px',
-                borderRadius: '60px',
-                backgroundColor: '#f3f4f6',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                border: '2px dashed #cbd5e1'
-              }}>
-                <img
-                  src={DEFAULT_IMAGE}
-                  alt="Default"
-                  style={{
-                    width: '80px',
-                    height: '80px',
-                    opacity: 0.5
-                  }}
-                />
-              </div>
-              <h2 style={{ marginTop: 0, marginBottom: '16px', fontSize: '1.25em', color: '#10B981' }}>
-                Employee Added Successfully!
-              </h2>
-              <div style={{ color: '#475569', fontSize: '0.9em', marginBottom: '24px' }}>
-                <p><strong>Name:</strong> {newlyCreatedEmployee.EmployeeName}</p>
-                <p><strong>Department:</strong> {newlyCreatedEmployee.Department}</p>
-                {newlyCreatedEmployee.StartDate && (
-                  <p><strong>Start Date:</strong> {new Date(newlyCreatedEmployee.StartDate).toLocaleDateString()}</p>
-                )}
-              </div>
-              <div style={{ 
-                backgroundColor: '#f0f9ff',
-                padding: '16px',
-                borderRadius: '8px',
-                border: '1px solid #bae6fd',
-                marginBottom: '24px'
-              }}>
-                <h3 style={{ 
-                  fontSize: '1.1em',
-                  color: '#0369a1',
-                  marginTop: 0,
-                  marginBottom: '8px'
-                }}>
-                  Would you like to add a profile photo?
-                </h3>
-                <p style={{ 
-                  fontSize: '0.9em',
-                  color: '#0369a1',
-                  marginBottom: '16px'
-                }}>
-                  This will help identify the employee in the directory.
-                </p>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={async (e) => {
-                    const file = e.target.files[0];
-                    if (file) {
-                      try {
-                        await uploadImage(newlyCreatedEmployee.ID_Employee, file);
-                        setImageVersion(Date.now());
-                        setSuccessModalOpen(false);
-                        await fetchEmployees();
-                      } catch (err) {
-                        alert('Failed to upload image. Please try again.');
-                      }
-                    }
-                  }}
-                  style={{
-                    width: '100%',
-                    padding: '8px',
-                    marginBottom: '16px',
-                  }}
-                />
-              </div>
-            </div>
-
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '24px' }}>
-              <button
-                onClick={() => {
-                  setSuccessModalOpen(false);
-                  setNewlyCreatedEmployee(null);
-                }}
-                style={{
-                  padding: '8px 16px',
-                  borderRadius: '6px',
-                  border: '1px solid #cbd5e1',
-                  backgroundColor: '#fff',
-                  color: '#555',
-                  cursor: 'pointer',
-                }}
-              >
-                Skip
-              </button>
-              <button
-                onClick={() => {
-                  setSuccessModalOpen(false);
-                  setNewlyCreatedEmployee(null);
-                }}
-                style={{
-                  padding: '8px 16px',
-                  borderRadius: '6px',
-                  border: 'none',
-                  backgroundColor: '#10B981',
-                  color: '#fff',
-                  cursor: 'pointer',
-                }}
-              >
-                Done
-              </button>
             </div>
           </div>
         </div>
