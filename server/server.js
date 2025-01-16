@@ -62,21 +62,59 @@ if (process.env.NODE_ENV !== 'production') {
 // -------------------------------------------------------
 // 3) Configure multer for file upload
 // -------------------------------------------------------
+
+// Create uploads directory with absolute path
+const uploadDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+// Ensure uploads directory has proper permissions
+try {
+  fs.chmodSync(uploadDir, 0o777);
+} catch (err) {
+  console.error('Failed to set upload directory permissions:', err);
+}
+
 const upload = multer({ 
   storage: multer.diskStorage({
     destination: function (req, file, cb) {
-      cb(null, 'uploads/') // Ensure this directory exists
+      cb(null, uploadDir);
     },
     filename: function (req, file, cb) {
-      cb(null, Date.now() + '-' + file.originalname)
+      // Sanitize filename
+      const sanitizedName = file.originalname.replace(/[^a-zA-Z0-9.-]/g, '_');
+      cb(null, `${Date.now()}-${sanitizedName}`);
     }
-  })
+  }),
+  limits: {
+    fileSize: 5 * 1024 * 1024 // 5MB limit
+  },
+  fileFilter: function (req, file, cb) {
+    // Accept images only
+    if (!file.originalname.match(/\.(jpg|jpeg|png|gif)$/i)) {
+      return cb(new Error('Only image files are allowed!'), false);
+    }
+    cb(null, true);
+  }
 });
 
-// Create uploads directory if it doesn't exist
-if (!fs.existsSync('uploads')) {
-  fs.mkdirSync('uploads');
-}
+// Error handling middleware for multer
+app.use((err, req, res, next) => {
+  if (err instanceof multer.MulterError) {
+    console.error('Multer error:', err);
+    return res.status(400).json({
+      error: `File upload error: ${err.message}`,
+      code: err.code
+    });
+  } else if (err) {
+    console.error('Other error:', err);
+    return res.status(500).json({
+      error: err.message
+    });
+  }
+  next();
+});
 
 // -------------------------------------------------------
 // 4) Routes
@@ -124,7 +162,7 @@ app.post('/api/employees', async (req, res) => {
     }
 
     const url = `${API_BASE_URL}/tables/${TABLE_NAME}/records`;
-    const { data } = await tokenManager.handleRequest(async () => {
+    const result = await tokenManager.handleRequest(async () => {
       try {
         // Create employee record
         const createConfig = await tokenManager.createAuthenticatedRequest({
@@ -158,10 +196,12 @@ app.post('/api/employees', async (req, res) => {
 
         // If successful, return the created record
         if (createResponse.data?.Result?.[0]) {
-          return createResponse.data.Result[0];
+          const employee = createResponse.data.Result[0];
+          console.log('Created employee:', employee);
+          return employee;
         }
 
-        // If no result, try to get the newly created record
+        // If no result in create response, try to get the newly created record
         const getConfig = await tokenManager.createAuthenticatedRequest({
           method: 'get',
           url,
@@ -180,7 +220,9 @@ app.post('/api/employees', async (req, res) => {
         console.log('Get response:', getResponse.data);
 
         if (getResponse.data?.Result?.[0]) {
-          return getResponse.data.Result[0];
+          const employee = getResponse.data.Result[0];
+          console.log('Retrieved employee:', employee);
+          return employee;
         }
 
         throw new Error('Failed to create employee: No record found');
@@ -189,129 +231,121 @@ app.post('/api/employees', async (req, res) => {
         throw error;
       }
     });
-    return res.json(data);
+
+    // Ensure we have an ID before sending response
+    if (!result.ID_Employee) {
+      console.error('Missing ID_Employee in result:', result);
+      return res.status(500).json({ error: 'Server error: Missing employee ID in response' });
+    }
+
+    return res.json(result);
   } catch (error) {
     console.error('POST employees error:', error.message);
     return res.status(500).json({ error: error.message });
   }
 });
 
-// Update file info
-app.put('/api/employees/:pk/image/fileinfo', async (req, res) => {
-  try {
-    const { pk } = req.params;
-    const { FileName } = req.body;
-
-    console.log('Updating file info for employee:', pk);
-    console.log('File name:', FileName);
-
-    // First, update the record with the filename
-    const recordUrl = `${API_BASE_URL}/tables/${TABLE_NAME}/records`;
-    const response = await tokenManager.handleRequest(async () => {
-      const config = await tokenManager.createAuthenticatedRequest({
-        method: 'put',
-        url: recordUrl,
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
-        data: {
-          Image: FileName
-        },
-        params: {
-          'q.where': `ID_Employee=${pk}`
-        }
-      });
-      
-      return axios(config);
-    });
-
-    console.log('File info update response:', response.data);
-    return res.json({ success: true });
-  } catch (error) {
-    console.error('Update file info error:', error.message);
-    if (error.response) {
-      console.error('Error response:', error.response.data);
-    }
-    return res.status(500).json({ error: error.message });
-  }
-});
-
 // UPLOAD employee image
-app.put('/api/employees/:pk/image', upload.single('File'), async (req, res) => {
-  try {
-    const { pk } = req.params;
-
-    if (!req.file) {
-      return res.status(400).json({ error: 'No file uploaded' });
+app.put('/api/employees/:pk/image', (req, res) => {
+  console.log('Upload request received');
+  console.log('Headers:', req.headers);
+  console.log('Files:', req.files);
+  console.log('Body:', req.body);
+  
+  upload.single('File')(req, res, async (err) => {
+    if (err) {
+      console.error('Upload middleware error:', err);
+      return res.status(400).json({ error: err.message });
     }
 
-    const url = `${API_BASE_URL}/tables/${TABLE_NAME}/attachments/Image/${pk}`;
+    try {
+      const { pk } = req.params;
 
-    console.log('Starting image upload for employee:', pk);
-    console.log('File details:', {
-      filename: req.file.originalname,
-      contentType: req.file.mimetype,
-      size: req.file.size
-    });
+      if (!req.file) {
+        console.error('No file in request');
+        return res.status(400).json({ error: 'No file uploaded' });
+      }
 
-    const response = await tokenManager.handleRequest(async () => {
-      const form = new FormData();
-      form.append('File', fs.createReadStream(req.file.path), {
+      console.log('Starting image upload for employee:', pk);
+      console.log('File details:', {
+        path: req.file.path,
         filename: req.file.originalname,
-        contentType: req.file.mimetype
+        contentType: req.file.mimetype,
+        size: req.file.size,
+        fieldname: req.file.fieldname
       });
 
-      const config = await tokenManager.createAuthenticatedRequest({
-        method: 'put',
-        url,
-        headers: {
-          ...form.getHeaders(),
-          'Accept': 'application/json'
-        },
-        data: form,
-        maxContentLength: Infinity,
-        maxBodyLength: Infinity
+      const url = `${API_BASE_URL}/tables/${TABLE_NAME}/attachments/Image/${pk}`;
+      console.log('Upload URL:', url);
+
+      const response = await tokenManager.handleRequest(async () => {
+        const form = new FormData();
+        const fileStream = fs.createReadStream(req.file.path);
+        
+        fileStream.on('error', (error) => {
+          console.error('File stream error:', error);
+          throw error;
+        });
+
+        form.append('File', fileStream, {
+          filename: req.file.originalname,
+          contentType: req.file.mimetype
+        });
+
+        console.log('Form data headers:', form.getHeaders());
+
+        const config = await tokenManager.createAuthenticatedRequest({
+          method: 'put',
+          url,
+          headers: {
+            ...form.getHeaders(),
+            'Accept': 'application/json'
+          },
+          data: form,
+          maxContentLength: Infinity,
+          maxBodyLength: Infinity,
+          timeout: 30000 // 30 second timeout
+        });
+
+        console.log('Request config:', {
+          method: config.method,
+          url: config.url,
+          headers: config.headers
+        });
+
+        return axios(config);
       });
-      
-      console.log('Uploading image with config:', {
-        url: config.url,
-        method: config.method,
-        headers: config.headers
-      });
-      
-      return axios(config);
-    });
 
-    console.log('Upload response:', response.data);
+      console.log('Upload response:', response.data);
 
-    // Clean up: delete the temporary file
-    fs.unlink(req.file.path, (err) => {
-      if (err) console.error('Error deleting temp file:', err);
-    });
-
-    return res.json({ success: true });
-  } catch (error) {
-    console.error('Upload error details:');
-    console.error('Error message:', error.message);
-    if (error.response) {
-      console.error('Response status:', error.response.status);
-      console.error('Response headers:', error.response.headers);
-      console.error('Response data:', error.response.data);
-    }
-
-    // Clean up temp file on error
-    if (req.file) {
+      // Clean up: delete the temporary file
       fs.unlink(req.file.path, (err) => {
         if (err) console.error('Error deleting temp file:', err);
       });
-    }
 
-    return res.status(500).json({ 
-      error: error.message,
-      details: error.response?.data || 'No additional details'
-    });
-  }
+      return res.json({ success: true });
+    } catch (error) {
+      console.error('Upload error details:');
+      console.error('Error message:', error.message);
+      if (error.response) {
+        console.error('Response status:', error.response.status);
+        console.error('Response headers:', error.response.headers);
+        console.error('Response data:', error.response.data);
+      }
+
+      // Clean up temp file on error
+      if (req.file) {
+        fs.unlink(req.file.path, (err) => {
+          if (err) console.error('Error deleting temp file:', err);
+        });
+      }
+
+      return res.status(500).json({ 
+        error: error.message,
+        details: error.response?.data || 'No additional details'
+      });
+    }
+  });
 });
 
 // UPDATE employee by ID_Employee
@@ -391,8 +425,8 @@ app.get('/api/employees/:pk/image', async (req, res) => {
     });
 
     if (response.status === 404) {
-      // If image not found, return default image or 404
-      return res.status(404).json({ error: 'Image not found' });
+      // Return default image path instead of 404 error
+      return res.redirect('https://cdn.caspio.com/A0E15000/Safety%20Stripes/NWCA%20Favicon%20for%20TEAMNWCA.com.png?ver=1');
     }
 
     // Set proper content type header based on response
