@@ -1,7 +1,12 @@
-feat(artwork): improve sorting to prioritize due dates
+refactor: update artwork search to use User_Email field
 
-- Sort artwork records by status first
-- Within each status, sort by due date (earliest first)
-- Records without due dates appear at end of each status group
-- Use ID_Design DESC as final sort to show newest records first
-- Filter to show records with ID_Design > 52000
+- Change CustomerServiceRep field to User_Email for consistency with Caspio table
+- Update frontend search form with email input type and validation
+- Update backend search and sort functionality to use User_Email
+- Add test cases to verify email search functionality
+- Fix sorting options to use correct field names
+- Improve search accuracy with exact email matching
+
+This change ensures the search functionality correctly uses the User_Email field
+from the Caspio table instead of CustomerServiceRep, making the search more
+accurate and consistent with the database structure.

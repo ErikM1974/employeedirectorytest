@@ -6,42 +6,85 @@ const fs = require('fs');
 const FormData = require('form-data');
 const upload = require('../config/upload');
 
-// Get all artwork requests
+// Get artwork requests with search and sort
 router.get('/', async (req, res) => {
     try {
-        // Get date filter from query params or default to last 30 days
-        const daysAgo = req.query.days || 30;
-        const startDate = new Date();
-        startDate.setDate(startDate.getDate() - parseInt(daysAgo));
-        // Format date as YYYY-MM-DD for Caspio REST API
-        const year = startDate.getFullYear();
-        const month = String(startDate.getMonth() + 1).padStart(2, '0');
-        const day = String(startDate.getDate()).padStart(2, '0');
-        const formattedDate = `${year}-${month}-${day}`;
+        const { 
+            company,         // CompanyName search
+            status,         // Status filter
+            rep,            // CustomerServiceRep filter
+            dateFrom,       // Date_Created range start
+            dateTo,         // Date_Created range end
+            idFrom,         // ID_Design range start
+            idTo,           // ID_Design range end
+            sortBy = 'ID_Design',  // Default sort field
+            sortDir = 'desc'       // Default sort direction
+        } = req.query;
 
-        // Sort by Status, then Due_Date (earliest first), then ID_Design (newest first)
-        const sortOrder = encodeURIComponent(`
-            CASE Status 
-                WHEN 'In Progress' THEN 1 
-                WHEN 'Awaiting Approval' THEN 2 
-                WHEN 'Completed' THEN 3 
-                ELSE 4 
-            END,
-            CASE WHEN Due_Date IS NULL THEN 1 ELSE 0 END,
-            Due_Date ASC,
-            ID_Design DESC
-        `.replace(/\s+/g, ' ').trim());
-        // Get records with ID_Design > 52000, sorted by status and ID_Design
-        const whereClause = encodeURIComponent('ID_Design > 52000');
+        // Build where conditions
+        let whereConditions = [];
+        
+        // Company name - partial match using LIKE
+        if (company) {
+            whereConditions.push(`CompanyName LIKE '%${company}%'`);
+        }
+        
+        // Status - exact match
+        if (status) {
+            whereConditions.push(`Status LIKE '${status}%'`); // Match start of status text
+        }
+        
+        // User Email search
+        if (rep) {
+            whereConditions.push(`User_Email = '${rep}'`);
+        }
+        
+        // Date range
+        if (dateFrom && dateTo) {
+            whereConditions.push(`Date_Created BETWEEN '${dateFrom}' AND '${dateTo}'`);
+        }
+        
+        // ID range
+        if (idFrom && idTo) {
+            whereConditions.push(`ID_Design BETWEEN ${idFrom} AND ${idTo}`);
+        }
+
+        // Show all records by default
+        if (whereConditions.length === 0) {
+            whereConditions.push('ID_Design > 0');
+        }
+
+        // Combine conditions
+        const whereClause = encodeURIComponent(whereConditions.join(' AND '));
+
+        // Build sort order
+        const validSortFields = ['ID_Design', 'CompanyName', 'Status', 'Date_Created', 'Due_Date', 'User_Email'];
+        const validSortDirs = ['asc', 'desc'];
+        
+        // Validate sort parameters
+        const finalSortBy = validSortFields.includes(sortBy) ? sortBy : 'ID_Design';
+        const finalSortDir = validSortDirs.includes(sortDir.toLowerCase()) ? sortDir.toLowerCase() : 'desc';
+        
+        const sortOrder = encodeURIComponent(`${finalSortBy} ${finalSortDir}`);
+        
+        // Build URL with search and sort
         const url = `${process.env.API_BASE_URL}/tables/${process.env.ART_TABLE_NAME}/records?q.where=${whereClause}&q.sort=${sortOrder}`;
-        console.log('Request details:', {
-            API_BASE_URL: process.env.API_BASE_URL,
-            ART_TABLE_NAME: process.env.ART_TABLE_NAME,
-            sortOrder: 'Status, then Due_Date ASC (nulls last), then ID_Design DESC',
-            filter: 'ID_Design > 52000',
+        
+        // Log search parameters and constructed query
+        console.log('Search Parameters:', {
+            company: company || 'not specified',
+            status: status || 'not specified',
+            rep: rep || 'not specified',
+            dateRange: dateFrom && dateTo ? `${dateFrom} to ${dateTo}` : 'not specified',
+            idRange: idFrom && idTo ? `${idFrom} to ${idTo}` : 'not specified',
+            sorting: `${finalSortBy} ${finalSortDir}`
+        });
+        
+        console.log('Query Details:', {
+            whereClause: decodeURIComponent(whereClause),
+            sortOrder: decodeURIComponent(sortOrder),
             fullUrl: url
         });
-        console.log('Using token:', req.caspioToken);
         
         const response = await axios.get(url, {
             headers: {
@@ -49,10 +92,6 @@ router.get('/', async (req, res) => {
                 'Accept': 'application/json'
             }
         });
-        
-        console.log('Response status:', response.status);
-        console.log('Response headers:', response.headers);
-        console.log('Raw API Response:', JSON.stringify(response.data, null, 2));
         
         if (!response.data || !response.data.Result) {
             console.warn('Invalid response format:', response.data);
@@ -72,7 +111,6 @@ router.get('/', async (req, res) => {
                 headers: error.config?.headers
             });
 
-            // Check for specific error cases
             if (error.response?.status === 401) {
                 return res.status(401).json({ 
                     error: 'Authentication failed', 
@@ -85,8 +123,6 @@ router.get('/', async (req, res) => {
                     details: 'The requested resource was not found'
                 });
             }
-        } else {
-            console.error('Error fetching artwork:', error.message);
         }
 
         res.status(500).json({ 
@@ -161,19 +197,26 @@ router.delete('/:id', async (req, res) => {
 router.get('/:id/image', async (req, res) => {
     try {
         const response = await axios.get(
-            `${process.env.API_BASE_URL}/tables/${process.env.ART_TABLE_NAME}/attachments/File_Upload_One/${req.params.id}`,
+            `${process.env.API_BASE_URL}/tables/${process.env.ART_TABLE_NAME}/attachments/File_Upload_One?q.where=ID_Design=${req.params.id}`,
             {
                 headers: {
-                'Authorization': `Bearer ${req.caspioToken}`,
-                'Accept': 'application/json'
+                    'Authorization': `Bearer ${req.caspioToken}`,
+                    'Accept': '*/*'
                 },
                 responseType: 'stream'
             }
         );
+
+        // Forward content type
+        if (response.headers['content-type']) {
+            res.setHeader('Content-Type', response.headers['content-type']);
+        }
+
+        // Stream the image
         response.data.pipe(res);
     } catch (error) {
-        console.error('Error fetching artwork image:', error);
-        res.status(500).json({ error: 'Failed to fetch artwork image' });
+        console.error('Error fetching image:', error);
+        res.status(500).json({ message: 'Error fetching image' });
     }
 });
 
@@ -181,14 +224,14 @@ router.get('/:id/image', async (req, res) => {
 router.put('/:id/image', upload.single('File'), async (req, res) => {
     try {
         if (!req.file) {
-            return res.status(400).json({ error: 'No file uploaded' });
+            return res.status(400).json({ message: 'No file uploaded' });
         }
 
         const formData = new FormData();
         formData.append('File', fs.createReadStream(req.file.path));
 
         const response = await axios.put(
-            `${process.env.API_BASE_URL}/tables/${process.env.ART_TABLE_NAME}/attachments/File_Upload_One/${req.params.id}`,
+            `${process.env.API_BASE_URL}/tables/${process.env.ART_TABLE_NAME}/attachments/File_Upload_One?q.where=ID_Design=${req.params.id}`,
             formData,
             {
                 headers: {

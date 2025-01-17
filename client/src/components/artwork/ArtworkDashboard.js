@@ -20,17 +20,52 @@ const ArtworkDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [imageVersion, setImageVersion] = useState(Date.now());
-  const [dateFilter, setDateFilter] = useState('30'); // Default to last 30 days
+  // Search states
+  const [searchParams, setSearchParams] = useState({
+    company: '',
+    status: '',
+    rep: '',
+    dateFrom: '',
+    dateTo: '',
+    sortBy: 'ID_Design',
+    sortDir: 'desc'
+  });
 
-  // Date filter options
-  const DATE_FILTERS = [
-    { value: '7', label: 'Last 7 days' },
-    { value: '30', label: 'Last 30 days' },
-    { value: '90', label: 'Last 90 days' },
-    { value: '180', label: 'Last 180 days' }
+  // Status options
+  const STATUS_OPTIONS = ['In Progress', 'Awaiting Approval', 'Completed'];
+  
+  // Sort options
+  const SORT_OPTIONS = [
+    { value: 'ID_Design', label: 'Design ID' },
+    { value: 'CompanyName', label: 'Company Name' },
+    { value: 'Status', label: 'Status' },
+    { value: 'Date_Created', label: 'Date Created' },
+    { value: 'Due_Date', label: 'Due Date' },
+    { value: 'User_Email', label: 'User Email' }
   ];
 
-  // Fetch artwork data
+  // Handle search parameter changes
+  const handleSearchChange = (field, value) => {
+    setSearchParams(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  // Clear search filters
+  const clearSearch = () => {
+    setSearchParams({
+      company: '',
+      status: '',
+      rep: '',
+      dateFrom: '',
+      dateTo: '',
+      sortBy: 'ID_Design',
+      sortDir: 'desc'
+    });
+  };
+
+  // Fetch artwork data with search parameters
   const fetchArtwork = async () => {
     try {
       setLoading(true);
@@ -38,7 +73,18 @@ const ArtworkDashboard = () => {
       const baseUrl = process.env.NODE_ENV === 'production'
         ? '/api/artwork'
         : 'http://localhost:3001/api/artwork';
-      const response = await axios.get(`${baseUrl}?days=${dateFilter}`);
+
+      // Build query string from search parameters
+      const params = new URLSearchParams();
+      if (searchParams.company) params.append('company', searchParams.company);
+      if (searchParams.status) params.append('status', searchParams.status);
+      if (searchParams.rep) params.append('rep', searchParams.rep);
+      if (searchParams.dateFrom) params.append('dateFrom', searchParams.dateFrom);
+      if (searchParams.dateTo) params.append('dateTo', searchParams.dateTo);
+      params.append('sortBy', searchParams.sortBy);
+      params.append('sortDir', searchParams.sortDir);
+
+      const response = await axios.get(`${baseUrl}?${params.toString()}`);
       console.log('Artwork response:', response.data); // Debug log
       if (response.data && Array.isArray(response.data.Result)) {
         // Transform the data to set default status if empty
@@ -59,9 +105,10 @@ const ArtworkDashboard = () => {
     }
   };
 
+  // Fetch data when search parameters change
   useEffect(() => {
     fetchArtwork();
-  }, [dateFilter]); // Re-fetch when date filter changes
+  }, [searchParams]); // Re-fetch when any search parameter changes
 
   // Handle drag end
   const onDragEnd = async (result) => {
@@ -133,17 +180,95 @@ const ArtworkDashboard = () => {
       <ToastContainer />
       <h1>Artwork Dashboard</h1>
       <div className="dashboard-controls">
-        <select 
-          value={dateFilter}
-          onChange={(e) => setDateFilter(e.target.value)}
-          className="date-filter"
-        >
-          {DATE_FILTERS.map(filter => (
-            <option key={filter.value} value={filter.value}>
-              {filter.label}
-            </option>
-          ))}
-        </select>
+        <form className="search-form" onSubmit={(e) => { e.preventDefault(); fetchArtwork(); }}>
+          <div className="search-group">
+            <label>Company Name</label>
+            <input
+              type="text"
+              className="search-input"
+              value={searchParams.company}
+              onChange={(e) => handleSearchChange('company', e.target.value)}
+              placeholder="Search company..."
+            />
+          </div>
+
+          <div className="search-group">
+            <label>Status</label>
+            <select
+              className="search-input"
+              value={searchParams.status}
+              onChange={(e) => handleSearchChange('status', e.target.value)}
+            >
+              <option value="">All Statuses</option>
+              {STATUS_OPTIONS.map(status => (
+                <option key={status} value={status}>{status}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="search-group">
+            <label>User Email</label>
+            <input
+              type="email"
+              className="search-input"
+              value={searchParams.rep}
+              onChange={(e) => handleSearchChange('rep', e.target.value)}
+              placeholder="Search by email..."
+            />
+          </div>
+
+          <div className="search-group">
+            <label>Date From</label>
+            <input
+              type="date"
+              className="search-input"
+              value={searchParams.dateFrom}
+              onChange={(e) => handleSearchChange('dateFrom', e.target.value)}
+            />
+          </div>
+
+          <div className="search-group">
+            <label>Date To</label>
+            <input
+              type="date"
+              className="search-input"
+              value={searchParams.dateTo}
+              onChange={(e) => handleSearchChange('dateTo', e.target.value)}
+            />
+          </div>
+
+          <div className="search-group">
+            <label>Sort By</label>
+            <div className="sort-controls">
+              <select
+                className="search-input"
+                value={searchParams.sortBy}
+                onChange={(e) => handleSearchChange('sortBy', e.target.value)}
+              >
+                {SORT_OPTIONS.map(option => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
+              </select>
+              <select
+                className="search-input"
+                value={searchParams.sortDir}
+                onChange={(e) => handleSearchChange('sortDir', e.target.value)}
+              >
+                <option value="asc">Ascending</option>
+                <option value="desc">Descending</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="search-buttons">
+            <button type="button" className="search-button secondary" onClick={clearSearch}>
+              Clear
+            </button>
+            <button type="submit" className="search-button primary">
+              Search
+            </button>
+          </div>
+        </form>
       </div>
       
       <DragDropContext onDragEnd={onDragEnd}>
@@ -177,16 +302,20 @@ const ArtworkDashboard = () => {
                           >
                             <div className="artwork-image">
                               {artwork.File_Upload_One ? (
+                                <>
                                 <img 
-                                  src={process.env.NODE_ENV === 'production'
-                                    ? `/api/artwork/${artwork.ID_Design}/image?v=${imageVersion}`
-                                    : `http://localhost:3001/api/artwork/${artwork.ID_Design}/image?v=${imageVersion}`}
+                                  src={`${process.env.NODE_ENV === 'production' ? '' : 'http://localhost:3001'}/api/artwork/${artwork.ID_Design}/image?v=${Date.now()}`}
                                   alt={`Design for ${artwork.CompanyName}`}
                                   onError={(e) => {
+                                    console.error('Image load error for ID:', artwork.ID_Design);
+                                    console.error('File path:', artwork.File_Upload_One);
                                     e.target.classList.add('error');
                                     e.target.parentElement.classList.add('no-image');
                                   }}
+                                  style={{ maxHeight: '120px', objectFit: 'contain' }} // Leave room for file path
                                 />
+                                  <div className="file-path">{artwork.File_Upload_One}</div>
+                                </>
                               ) : (
                                 <div className="no-image">No Image</div>
                               )}

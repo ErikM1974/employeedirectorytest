@@ -33,9 +33,24 @@ const corsOptions = {
   origin: process.env.NODE_ENV === 'production' ? config.clientUrl : ['http://localhost:3000', 'http://127.0.0.1:3000'],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'Content-Length', 'X-Requested-With', 'Accept'],
-  exposedHeaders: ['Content-Length', 'Content-Type'],
-  credentials: true
+  exposedHeaders: ['Content-Length', 'Content-Type', 'Content-Disposition', 'Cache-Control'],
+  credentials: true,
+  maxAge: 86400, // Cache preflight requests for 24 hours
+  optionsSuccessStatus: 200 // Some legacy browsers (IE11, various SmartTVs) choke on 204
 };
+
+// Enable CORS for all routes
+app.use(cors(corsOptions));
+
+// Add headers for image responses
+app.use((req, res, next) => {
+  if (req.path.endsWith('/image')) {
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+  }
+  next();
+});
 
 app.use(cors(corsOptions));
 app.use(express.json());
