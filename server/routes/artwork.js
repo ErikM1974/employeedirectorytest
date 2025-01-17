@@ -225,22 +225,33 @@ router.get('/:id/image/:field', async (req, res) => {
             return res.status(404).json({ message: `No image available for ${fieldName}` });
         }
 
+        // Get the file extension from the path
+        const filePath = artwork[fieldName];
+        const fileExt = filePath.split('.').pop().toLowerCase();
+        
+        // Set appropriate content type based on file extension
+        const contentType = {
+            'png': 'image/png',
+            'jpg': 'image/jpeg',
+            'jpeg': 'image/jpeg',
+            'gif': 'image/gif',
+            'webp': 'image/webp'
+        }[fileExt] || 'application/octet-stream';
+
         // Now fetch the image
         const response = await axios.get(
             `${process.env.API_BASE_URL}/tables/${process.env.ART_TABLE_NAME}/attachments/${fieldName}?q.where=ID_Design=${req.params.id}`,
             {
                 headers: {
                     'Authorization': `Bearer ${req.caspioToken}`,
-                    'Accept': '*/*'
+                    'Accept': contentType
                 },
                 responseType: 'stream'
             }
         );
 
-        // Forward content type
-        if (response.headers['content-type']) {
-            res.setHeader('Content-Type', response.headers['content-type']);
-        }
+        // Set content type based on file extension
+        res.setHeader('Content-Type', contentType);
 
         // Stream the image
         response.data.pipe(res);

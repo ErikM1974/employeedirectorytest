@@ -1,11 +1,13 @@
-feat: add image viewer for artwork files
+feat: improve artwork image display
 
-- Add ImageViewer component for full-size image display
-- Add click handlers to open images in viewer
-- Support all four image upload fields (One through Four)
-- Add modal overlay with image info and close button
-- Improve image display with hover effects
+- Add proper file extension handling for images (png, jpg, etc.)
+- Display filename and extension in overlay
+- Implement 2x2 grid layout for multiple images
+- Add hover effects and transitions
+- Improve image container styling and spacing
+- Better handling of missing images
+- Set proper content types based on file extensions
 
-This change allows users to click on any artwork image to view
-it in a larger modal window, making it easier to examine the
-artwork files in detail.
+This change improves how artwork images are displayed in the cards,
+making it easier to identify file types and view multiple images
+per artwork entry.

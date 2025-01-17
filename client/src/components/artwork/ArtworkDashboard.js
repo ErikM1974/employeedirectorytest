@@ -326,18 +326,23 @@ const ArtworkDashboard = () => {
                                       setSelectedArtwork(artwork);
                                     }}
                                   >
-                                    <img 
-                                      src={`${process.env.NODE_ENV === 'production' ? '' : 'http://localhost:3001'}/api/artwork/${artwork.ID_Design}/image/${field}?v=${Date.now()}`}
-                                      alt={`Design ${field} for ${artwork.CompanyName}`}
-                                      onError={(e) => {
-                                        console.error(`Image ${field} load error for ID:`, artwork.ID_Design);
-                                        console.error('File path:', artwork[fieldName]);
-                                        e.target.classList.add('error');
-                                        e.target.parentElement.classList.add('no-image');
-                                      }}
-                                      style={{ maxHeight: '120px', objectFit: 'contain', cursor: 'pointer' }}
-                                    />
-                                    <div className="file-path">{artwork[fieldName]}</div>
+                                    <div className="image-container">
+                                      <img 
+                                        src={`${process.env.NODE_ENV === 'production' ? '' : 'http://localhost:3001'}/api/artwork/${artwork.ID_Design}/image/${field}?v=${Date.now()}`}
+                                        alt={`Design ${field} for ${artwork.CompanyName}`}
+                                        onError={(e) => {
+                                          console.error(`Image ${field} load error for ID:`, artwork.ID_Design);
+                                          console.error('File path:', artwork[fieldName]);
+                                          e.target.classList.add('error');
+                                          e.target.parentElement.classList.add('no-image');
+                                        }}
+                                        style={{ maxHeight: '120px', objectFit: 'contain', cursor: 'pointer' }}
+                                      />
+                                      <div className="file-info">
+                                        <div className="file-name">{artwork[fieldName].split('/').pop()}</div>
+                                        <div className="file-type">{artwork[fieldName].split('.').pop().toUpperCase()}</div>
+                                      </div>
+                                    </div>
                                   </div>
                                 ) : null;
                               })}
