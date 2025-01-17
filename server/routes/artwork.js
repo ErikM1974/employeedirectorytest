@@ -196,6 +196,27 @@ router.delete('/:id', async (req, res) => {
 // Get artwork image
 router.get('/:id/image', async (req, res) => {
     try {
+        // First check if the artwork exists and has an image
+        const artworkResponse = await axios.get(
+            `${process.env.API_BASE_URL}/tables/${process.env.ART_TABLE_NAME}/records?q.where=ID_Design=${req.params.id}`,
+            {
+                headers: {
+                    'Authorization': `Bearer ${req.caspioToken}`,
+                    'Accept': 'application/json'
+                }
+            }
+        );
+
+        if (!artworkResponse.data.Result || artworkResponse.data.Result.length === 0) {
+            return res.status(404).json({ message: 'Artwork not found' });
+        }
+
+        const artwork = artworkResponse.data.Result[0];
+        if (!artwork.File_Upload_One) {
+            return res.status(404).json({ message: 'No image available for this artwork' });
+        }
+
+        // Now fetch the image
         const response = await axios.get(
             `${process.env.API_BASE_URL}/tables/${process.env.ART_TABLE_NAME}/attachments/File_Upload_One?q.where=ID_Design=${req.params.id}`,
             {
@@ -216,7 +237,11 @@ router.get('/:id/image', async (req, res) => {
         response.data.pipe(res);
     } catch (error) {
         console.error('Error fetching image:', error);
-        res.status(500).json({ message: 'Error fetching image' });
+        if (error.response?.status === 404) {
+            res.status(404).json({ message: 'Image not found' });
+        } else {
+            res.status(500).json({ message: 'Error fetching image' });
+        }
     }
 });
 

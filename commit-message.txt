@@ -1,12 +1,10 @@
-refactor: update artwork search to use User_Email field
+feat: improve artwork image endpoint error handling
 
-- Change CustomerServiceRep field to User_Email for consistency with Caspio table
-- Update frontend search form with email input type and validation
-- Update backend search and sort functionality to use User_Email
-- Add test cases to verify email search functionality
-- Fix sorting options to use correct field names
-- Improve search accuracy with exact email matching
+- Add check for artwork existence before fetching image
+- Add check for File_Upload_One field
+- Return appropriate 404 status codes with descriptive messages
+- Better error handling for missing images vs server errors
+- Add test script for image endpoint functionality
 
-This change ensures the search functionality correctly uses the User_Email field
-from the Caspio table instead of CustomerServiceRep, making the search more
-accurate and consistent with the database structure.
+This improves the user experience by providing clear feedback when
+images are not available or artwork doesn't exist.
