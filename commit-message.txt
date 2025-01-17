@@ -1,10 +1,11 @@
-feat: improve artwork image endpoint error handling
+feat: add support for multiple artwork images
 
-- Add check for artwork existence before fetching image
-- Add check for File_Upload_One field
-- Return appropriate 404 status codes with descriptive messages
-- Better error handling for missing images vs server errors
-- Add test script for image endpoint functionality
+- Update image endpoint to handle File_Upload_One through Four
+- Modify artwork cards to display up to 4 images in a 2x2 grid
+- Add CSS styling for multiple image layout
+- Improve image container styling and file path display
+- Better error handling for missing images
 
-This improves the user experience by providing clear feedback when
-images are not available or artwork doesn't exist.
+This change allows artwork cards to show all available images
+instead of just File_Upload_One, providing a better overview
+of the artwork files.

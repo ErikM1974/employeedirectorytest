@@ -193,9 +193,16 @@ router.delete('/:id', async (req, res) => {
     }
 });
 
-// Get artwork image
-router.get('/:id/image', async (req, res) => {
+// Get artwork image by field name (One, Two, Three, Four)
+router.get('/:id/image/:field', async (req, res) => {
     try {
+        const validFields = ['One', 'Two', 'Three', 'Four'];
+        const field = req.params.field;
+        
+        if (!validFields.includes(field)) {
+            return res.status(400).json({ message: 'Invalid image field. Must be One, Two, Three, or Four.' });
+        }
+
         // First check if the artwork exists and has an image
         const artworkResponse = await axios.get(
             `${process.env.API_BASE_URL}/tables/${process.env.ART_TABLE_NAME}/records?q.where=ID_Design=${req.params.id}`,
@@ -212,13 +219,15 @@ router.get('/:id/image', async (req, res) => {
         }
 
         const artwork = artworkResponse.data.Result[0];
-        if (!artwork.File_Upload_One) {
-            return res.status(404).json({ message: 'No image available for this artwork' });
+        const fieldName = `File_Upload_${field}`;
+        
+        if (!artwork[fieldName]) {
+            return res.status(404).json({ message: `No image available for ${fieldName}` });
         }
 
         // Now fetch the image
         const response = await axios.get(
-            `${process.env.API_BASE_URL}/tables/${process.env.ART_TABLE_NAME}/attachments/File_Upload_One?q.where=ID_Design=${req.params.id}`,
+            `${process.env.API_BASE_URL}/tables/${process.env.ART_TABLE_NAME}/attachments/${fieldName}?q.where=ID_Design=${req.params.id}`,
             {
                 headers: {
                     'Authorization': `Bearer ${req.caspioToken}`,

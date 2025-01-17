@@ -300,24 +300,31 @@ const ArtworkDashboard = () => {
                               opacity: snapshot.isDragging ? 0.8 : 1
                             }}
                           >
-                            <div className="artwork-image">
-                              {artwork.File_Upload_One ? (
-                                <>
-                                <img 
-                                  src={`${process.env.NODE_ENV === 'production' ? '' : 'http://localhost:3001'}/api/artwork/${artwork.ID_Design}/image?v=${Date.now()}`}
-                                  alt={`Design for ${artwork.CompanyName}`}
-                                  onError={(e) => {
-                                    console.error('Image load error for ID:', artwork.ID_Design);
-                                    console.error('File path:', artwork.File_Upload_One);
-                                    e.target.classList.add('error');
-                                    e.target.parentElement.classList.add('no-image');
-                                  }}
-                                  style={{ maxHeight: '120px', objectFit: 'contain' }} // Leave room for file path
-                                />
-                                  <div className="file-path">{artwork.File_Upload_One}</div>
-                                </>
-                              ) : (
-                                <div className="no-image">No Image</div>
+                            <div className="artwork-images">
+                              {['One', 'Two', 'Three', 'Four'].map((field) => {
+                                const fieldName = `File_Upload_${field}`;
+                                return artwork[fieldName] ? (
+                                  <div key={field} className="artwork-image">
+                                    <img 
+                                      src={`${process.env.NODE_ENV === 'production' ? '' : 'http://localhost:3001'}/api/artwork/${artwork.ID_Design}/image/${field}?v=${Date.now()}`}
+                                      alt={`Design ${field} for ${artwork.CompanyName}`}
+                                      onError={(e) => {
+                                        console.error(`Image ${field} load error for ID:`, artwork.ID_Design);
+                                        console.error('File path:', artwork[fieldName]);
+                                        e.target.classList.add('error');
+                                        e.target.parentElement.classList.add('no-image');
+                                      }}
+                                      style={{ maxHeight: '120px', objectFit: 'contain' }}
+                                    />
+                                    <div className="file-path">{artwork[fieldName]}</div>
+                                  </div>
+                                ) : null;
+                              })}
+                              {!artwork.File_Upload_One && 
+                               !artwork.File_Upload_Two && 
+                               !artwork.File_Upload_Three && 
+                               !artwork.File_Upload_Four && (
+                                <div className="no-image">No Images</div>
                               )}
                             </div>
                             <div className="artwork-details">
