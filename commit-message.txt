@@ -1,8 +1,10 @@
-docs: restore employee directory docs and add artwork section
+feat(artwork): enhance image display in artwork dashboard
 
-- Restore complete employee directory documentation
-- Add artwork dashboard section with API endpoints
-- Document Caspio integration for artwork
-- Add file handling notes and status workflow
-- Document artwork components
-- Fix placeholder text issues
+- Change image aspect ratio to 16/9 for better previews
+- Add hover effects to show full image content
+- Add fullscreen preview functionality
+- Improve image loading and error states
+- Add click handlers for better interaction
+- Improve mobile responsiveness
+- Add file metadata display
+- Add download functionality

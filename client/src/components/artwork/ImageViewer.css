@@ -7,21 +7,35 @@
 
 .image-container {
     width: 100%;
-    aspect-ratio: 1;
+    aspect-ratio: 16/9;  /* Changed from 1 to 16/9 for better preview */
     background: white;
     border: 1px solid #e9ecef;
     border-radius: 4px;
     overflow: hidden;
     position: relative;
+    cursor: pointer;  /* Added to indicate clickable */
+    transition: transform 0.2s ease;  /* Added animation */
+}
+
+.image-container:hover {
+    transform: scale(1.02);  /* Added hover effect */
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);  /* Added shadow on hover */
 }
 
 .image-container img {
     width: 100%;
     height: 100%;
-    object-fit: contain;
-    transition: opacity 0.2s ease;
+    object-fit: cover;  /* Changed from contain to cover */
+    transition: all 0.3s ease;
+    background: #f8f9fa;  /* Added background color */
 }
 
+.image-container:hover img {
+    object-fit: contain;  /* Show full image on hover */
+    background: #fff;  /* Lighter background on hover */
+}
+
+/* Rest of the CSS remains the same */
 .loading-placeholder {
     position: absolute;
     top: 0;
@@ -155,6 +169,26 @@
 .download-button:disabled {
     opacity: 0.6;
     cursor: not-allowed;
+}
+
+/* Added fullscreen preview */
+.fullscreen-preview {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.9);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.fullscreen-preview img {
+    max-width: 90vw;
+    max-height: 90vh;
+    object-fit: contain;
 }
 
 /* Mobile adjustments */
