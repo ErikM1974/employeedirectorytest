@@ -135,6 +135,7 @@
   position: relative;
   cursor: pointer;
   transition: transform 0.2s;
+  flex: 0 0 calc(50% - 5px);
 }
 
 .artwork-image:hover {
@@ -152,6 +153,12 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  border: 1px solid #e0e0e0;
+}
+
+.image-container.error {
+  background: #fff3f3;
+  border-color: #ffcdd2;
 }
 
 .image-container img {
@@ -159,6 +166,13 @@
   max-height: calc(100% - 30px);
   object-fit: contain;
   border-radius: 2px;
+  padding: 8px;
+}
+
+.no-image-text {
+  color: #999;
+  font-size: 0.9rem;
+  text-align: center;
 }
 
 .file-info {
@@ -166,13 +180,14 @@
   bottom: 0;
   left: 0;
   right: 0;
-  background: rgba(0, 0, 0, 0.7);
+  background: rgba(0, 0, 0, 0.8);
   padding: 4px 8px;
   color: white;
   font-size: 0.75rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  backdrop-filter: blur(2px);
 }
 
 .file-name {
@@ -181,14 +196,17 @@
   text-overflow: ellipsis;
   flex: 1;
   margin-right: 8px;
+  font-family: monospace;
+  font-size: 0.7rem;
 }
 
 .file-type {
   background: rgba(255, 255, 255, 0.2);
-  padding: 2px 4px;
+  padding: 2px 6px;
   border-radius: 3px;
-  font-size: 0.7rem;
+  font-size: 0.65rem;
   font-weight: bold;
+  letter-spacing: 0.5px;
 }
 
 .no-image {

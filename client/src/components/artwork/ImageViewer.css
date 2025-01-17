@@ -4,69 +4,115 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: rgba(0, 0, 0, 0.8);
+    background-color: rgba(0, 0, 0, 0.85);
     display: flex;
     justify-content: center;
     align-items: center;
     z-index: 1000;
+    backdrop-filter: blur(3px);
 }
 
 .image-viewer-content {
     background: white;
-    padding: 20px;
     border-radius: 8px;
     max-width: 90vw;
     max-height: 90vh;
     position: relative;
     display: flex;
     flex-direction: column;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    overflow: hidden;
+}
+
+.image-wrapper {
+    position: relative;
+    padding: 20px;
+    display: flex;
+    justify-content: center;
     align-items: center;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    background: #f8f9fa;
+    min-height: 300px;
+    max-height: calc(90vh - 150px);
+}
+
+.image-wrapper.error {
+    background: #fff3f3;
+}
+
+.image-wrapper.error::after {
+    content: 'Failed to load image';
+    color: #dc3545;
+    font-size: 0.9rem;
 }
 
 .image-viewer-content img {
     max-width: 100%;
-    max-height: calc(90vh - 150px);
+    max-height: calc(90vh - 200px);
     object-fit: contain;
     border-radius: 4px;
-}
-
-.image-viewer-content img.error {
-    display: none;
 }
 
 .close-button {
     position: absolute;
     top: 10px;
     right: 10px;
-    background: none;
+    background: rgba(0, 0, 0, 0.5);
     border: none;
+    color: white;
     font-size: 24px;
-    color: #666;
     cursor: pointer;
-    padding: 5px 10px;
+    padding: 5px 12px;
     border-radius: 50%;
+    z-index: 2;
     transition: background-color 0.2s;
 }
 
 .close-button:hover {
-    background-color: #f0f0f0;
-    color: #333;
+    background: rgba(0, 0, 0, 0.7);
 }
 
 .image-info {
-    margin-top: 15px;
-    text-align: center;
-    width: 100%;
+    padding: 20px;
+    background: white;
+    border-top: 1px solid #eee;
 }
 
-.image-info h3 {
-    margin: 0 0 10px;
+.info-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.info-header h3 {
+    margin: 0;
     color: #333;
+    font-size: 1.1rem;
 }
 
-.image-info p {
-    margin: 5px 0;
+.file-type {
+    background: #e9ecef;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: bold;
+    color: #495057;
+    letter-spacing: 0.5px;
+}
+
+.design-id {
     color: #666;
-    font-size: 0.9em;
+    font-size: 0.9rem;
+    margin: 5px 0;
+}
+
+.file-name {
+    font-family: monospace;
+    font-size: 0.85rem;
+    color: #495057;
+    background: #f8f9fa;
+    padding: 6px 10px;
+    border-radius: 4px;
+    margin: 8px 0 0;
+    word-break: break-all;
 }

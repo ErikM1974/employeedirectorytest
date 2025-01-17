@@ -238,23 +238,28 @@ router.get('/:id/image/:field', async (req, res) => {
             'webp': 'image/webp'
         }[fileExt] || 'application/octet-stream';
 
-        // Now fetch the image
+        // Extract the actual filename from the path
+        const filename = artwork[fieldName].split('/').pop();
+        
+        // Now fetch the image using the correct Caspio endpoint
         const response = await axios.get(
-            `${process.env.API_BASE_URL}/tables/${process.env.ART_TABLE_NAME}/attachments/${fieldName}?q.where=ID_Design=${req.params.id}`,
+            `${process.env.API_BASE_URL}/files/artwork/${filename}`,
             {
                 headers: {
                     'Authorization': `Bearer ${req.caspioToken}`,
                     'Accept': contentType
                 },
-                responseType: 'stream'
+                responseType: 'arraybuffer'  // Changed to arraybuffer for binary data
             }
         );
 
-        // Set content type based on file extension
+        // Set headers for the image response
         res.setHeader('Content-Type', contentType);
+        res.setHeader('Content-Length', response.data.length);
+        res.setHeader('Cache-Control', 'public, max-age=31557600'); // Cache for 1 year
 
-        // Stream the image
-        response.data.pipe(res);
+        // Send the binary image data
+        res.send(response.data);
     } catch (error) {
         console.error('Error fetching image:', error);
         if (error.response?.status === 404) {

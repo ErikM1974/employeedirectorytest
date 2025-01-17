@@ -1,13 +1,15 @@
-feat: improve artwork image display
+fix: improve image handling and display
 
-- Add proper file extension handling for images (png, jpg, etc.)
-- Display filename and extension in overlay
-- Implement 2x2 grid layout for multiple images
-- Add hover effects and transitions
-- Improve image container styling and spacing
+- Update server to handle Caspio file paths correctly
+- Add proper content type handling for different image formats
+- Improve image viewer layout and styling
+- Add better error handling for failed images
+- Show file type and name in overlay
+- Add responsive image grid layout
+- Improve image loading states
+- Add proper caching headers
 - Better handling of missing images
-- Set proper content types based on file extensions
 
-This change improves how artwork images are displayed in the cards,
-making it easier to identify file types and view multiple images
-per artwork entry.
+These changes fix the image display issues and improve the overall
+user experience when viewing artwork files in both the dashboard
+cards and the full-size image viewer.
