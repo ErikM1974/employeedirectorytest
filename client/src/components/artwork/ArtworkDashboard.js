@@ -4,6 +4,7 @@ import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import './ArtworkDashboard.css';
+import ImageViewer from './ImageViewer';
 
 // Define the status columns
 const STATUS_COLUMNS = ['In Progress', 'Awaiting Approval', 'Completed'];
@@ -20,6 +21,9 @@ const ArtworkDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [imageVersion, setImageVersion] = useState(Date.now());
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [selectedArtwork, setSelectedArtwork] = useState(null);
+  
   // Search states
   const [searchParams, setSearchParams] = useState({
     company: '',
@@ -178,6 +182,16 @@ const ArtworkDashboard = () => {
   return (
     <div className="artwork-dashboard">
       <ToastContainer />
+      {selectedImage && selectedArtwork && (
+        <ImageViewer
+          artwork={selectedArtwork}
+          imageField={selectedImage}
+          onClose={() => {
+            setSelectedImage(null);
+            setSelectedArtwork(null);
+          }}
+        />
+      )}
       <h1>Artwork Dashboard</h1>
       <div className="dashboard-controls">
         <form className="search-form" onSubmit={(e) => { e.preventDefault(); fetchArtwork(); }}>
@@ -304,7 +318,14 @@ const ArtworkDashboard = () => {
                               {['One', 'Two', 'Three', 'Four'].map((field) => {
                                 const fieldName = `File_Upload_${field}`;
                                 return artwork[fieldName] ? (
-                                  <div key={field} className="artwork-image">
+                                  <div 
+                                    key={field} 
+                                    className="artwork-image"
+                                    onClick={() => {
+                                      setSelectedImage(fieldName);
+                                      setSelectedArtwork(artwork);
+                                    }}
+                                  >
                                     <img 
                                       src={`${process.env.NODE_ENV === 'production' ? '' : 'http://localhost:3001'}/api/artwork/${artwork.ID_Design}/image/${field}?v=${Date.now()}`}
                                       alt={`Design ${field} for ${artwork.CompanyName}`}
@@ -314,7 +335,7 @@ const ArtworkDashboard = () => {
                                         e.target.classList.add('error');
                                         e.target.parentElement.classList.add('no-image');
                                       }}
-                                      style={{ maxHeight: '120px', objectFit: 'contain' }}
+                                      style={{ maxHeight: '120px', objectFit: 'contain', cursor: 'pointer' }}
                                     />
                                     <div className="file-path">{artwork[fieldName]}</div>
                                   </div>

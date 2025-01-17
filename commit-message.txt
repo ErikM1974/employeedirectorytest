@@ -1,11 +1,11 @@
-feat: add support for multiple artwork images
+feat: add image viewer for artwork files
 
-- Update image endpoint to handle File_Upload_One through Four
-- Modify artwork cards to display up to 4 images in a 2x2 grid
-- Add CSS styling for multiple image layout
-- Improve image container styling and file path display
-- Better error handling for missing images
+- Add ImageViewer component for full-size image display
+- Add click handlers to open images in viewer
+- Support all four image upload fields (One through Four)
+- Add modal overlay with image info and close button
+- Improve image display with hover effects
 
-This change allows artwork cards to show all available images
-instead of just File_Upload_One, providing a better overview
-of the artwork files.
+This change allows users to click on any artwork image to view
+it in a larger modal window, making it easier to examine the
+artwork files in detail.
