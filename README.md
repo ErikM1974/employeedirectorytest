@@ -1,6 +1,57 @@
 # Employee Directory with Drag & Drop
 
-[Previous content remains exactly the same until the end]
+[Previous content up to Project Structure section remains exactly the same]
+
+### Project Structure
+```
+caspio-dragdrop-app/
+├── client/                 # React frontend
+│   ├── src/               # Source files
+│   │   └── components/    # React components
+│   │       ├── artwork/   # Artwork dashboard components
+│   │       │   ├── ArtworkDashboard.js  # Main artwork component
+│   │       │   └── ImageViewer.js       # File preview component
+│   │       └── employee/  # Employee directory components
+│   ├── public/            # Static files
+│   ├── package.json       # Frontend dependencies
+│   └── .env              # Frontend environment variables
+├── server/                # Express backend
+│   ├── routes/           # API routes
+│   │   ├── artwork.js    # Artwork request endpoints
+│   │   └── employees.js  # Employee endpoints
+│   ├── public/           # Built React app (production)
+│   ├── package.json      # Backend dependencies
+│   └── .env             # Backend environment variables
+├── .gitignore           # Git ignore rules
+├── package.json         # Root package.json
+└── Procfile            # Heroku deployment config
+```
+
+### Best Practices
+1. Environment Management
+   - Use separate .env files for development and production
+   - Never commit sensitive credentials
+   - Use environment variables for configuration
+
+2. Version Control
+   - Maintain development and production branches
+   - Use feature branches for new development
+   - Follow Git Flow branching model
+
+3. Testing
+   - Test all changes in development first
+   - Use staging environment if available
+   - Perform thorough testing before production deployment
+
+4. Deployment
+   - Automate build and deployment process
+   - Use continuous integration when possible
+   - Maintain deployment documentation
+
+5. Monitoring
+   - Set up logging in production
+   - Monitor application performance
+   - Track error rates and API usage
 
 ## Artwork Dashboard Integration
 
@@ -122,6 +173,18 @@ Headers:
 
 ### Components
 - ArtworkDashboard: Main dashboard component
+  - Displays artwork requests in a table
+  - Handles status updates
+  - Manages file downloads
 - ImageViewer: File preview and download component
+  - Renders file previews
+  - Provides download functionality
+  - Handles multiple file types
 
-[Rest of the previous content remains the same]
+## Contributing
+
+1. Fork the repository
+2. Create your feature branch
+3. Commit your changes
+4. Push to the branch
+5. Create a Pull Request
