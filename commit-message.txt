@@ -1,9 +1,8 @@
-feat(artwork): implement artwork dashboard with file handling
+docs: restore employee directory docs and add artwork section
 
-- Add ArtworkDashboard component with file display and status management
-- Add ImageViewer component for file preview and download
-- Add server routes for artwork requests and file handling
-- Fix status update endpoint to match Caspio API format
-- Add test scripts to verify CRUD operations
-- Improve error handling and logging
-- Add file metadata support for all upload fields
+- Restore complete employee directory documentation
+- Add artwork dashboard section with API endpoints
+- Document Caspio integration for artwork
+- Add file handling notes and status workflow
+- Document artwork components
+- Fix placeholder text issues
