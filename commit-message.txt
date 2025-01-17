@@ -1,15 +1,9 @@
-fix: improve image handling and display
+feat(artwork): implement artwork dashboard with file handling
 
-- Update server to handle Caspio file paths correctly
-- Add proper content type handling for different image formats
-- Improve image viewer layout and styling
-- Add better error handling for failed images
-- Show file type and name in overlay
-- Add responsive image grid layout
-- Improve image loading states
-- Add proper caching headers
-- Better handling of missing images
-
-These changes fix the image display issues and improve the overall
-user experience when viewing artwork files in both the dashboard
-cards and the full-size image viewer.
+- Add ArtworkDashboard component with file display and status management
+- Add ImageViewer component for file preview and download
+- Add server routes for artwork requests and file handling
+- Fix status update endpoint to match Caspio API format
+- Add test scripts to verify CRUD operations
+- Improve error handling and logging
+- Add file metadata support for all upload fields

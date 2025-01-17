@@ -1,384 +1,192 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
-import { ToastContainer, toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
-import './ArtworkDashboard.css';
 import ImageViewer from './ImageViewer';
+import './ArtworkDashboard.css';
 
-// Define the status columns
-const STATUS_COLUMNS = ['In Progress', 'Awaiting Approval', 'Completed'];
-
-// Status colors
-const STATUS_COLORS = {
-  'In Progress': '#0d6efd',
-  'Awaiting Approval': '#ffc107',
-  'Completed': '#198754'
-};
+const FILE_FIELDS = [
+    { key: 'File_Upload_One', label: 'File 1' },
+    { key: 'File_Upload_Two', label: 'File 2' },
+    { key: 'File_Upload_Three', label: 'File 3' },
+    { key: 'File_Upload_Four', label: 'File 4' }
+];
 
 const ArtworkDashboard = () => {
-  const [artworks, setArtworks] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [imageVersion, setImageVersion] = useState(Date.now());
-  const [selectedImage, setSelectedImage] = useState(null);
-  const [selectedArtwork, setSelectedArtwork] = useState(null);
-  
-  // Search states
-  const [searchParams, setSearchParams] = useState({
-    company: '',
-    status: '',
-    rep: '',
-    dateFrom: '',
-    dateTo: '',
-    sortBy: 'ID_Design',
-    sortDir: 'desc'
-  });
+    const [artworkRequests, setArtworkRequests] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [statusFilter, setStatusFilter] = useState('all');
 
-  // Status options
-  const STATUS_OPTIONS = ['In Progress', 'Awaiting Approval', 'Completed'];
-  
-  // Sort options
-  const SORT_OPTIONS = [
-    { value: 'ID_Design', label: 'Design ID' },
-    { value: 'CompanyName', label: 'Company Name' },
-    { value: 'Status', label: 'Status' },
-    { value: 'Date_Created', label: 'Date Created' },
-    { value: 'Due_Date', label: 'Due Date' },
-    { value: 'User_Email', label: 'User Email' }
-  ];
+    useEffect(() => {
+        fetchArtworkRequests();
+    }, []);
 
-  // Handle search parameter changes
-  const handleSearchChange = (field, value) => {
-    setSearchParams(prev => ({
-      ...prev,
-      [field]: value
-    }));
-  };
-
-  // Clear search filters
-  const clearSearch = () => {
-    setSearchParams({
-      company: '',
-      status: '',
-      rep: '',
-      dateFrom: '',
-      dateTo: '',
-      sortBy: 'ID_Design',
-      sortDir: 'desc'
-    });
-  };
-
-  // Fetch artwork data with search parameters
-  const fetchArtwork = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const baseUrl = process.env.NODE_ENV === 'production'
-        ? '/api/artwork'
-        : 'http://localhost:3001/api/artwork';
-
-      // Build query string from search parameters
-      const params = new URLSearchParams();
-      if (searchParams.company) params.append('company', searchParams.company);
-      if (searchParams.status) params.append('status', searchParams.status);
-      if (searchParams.rep) params.append('rep', searchParams.rep);
-      if (searchParams.dateFrom) params.append('dateFrom', searchParams.dateFrom);
-      if (searchParams.dateTo) params.append('dateTo', searchParams.dateTo);
-      params.append('sortBy', searchParams.sortBy);
-      params.append('sortDir', searchParams.sortDir);
-
-      const response = await axios.get(`${baseUrl}?${params.toString()}`);
-      console.log('Artwork response:', response.data); // Debug log
-      if (response.data && Array.isArray(response.data.Result)) {
-        // Transform the data to set default status if empty
-        const transformedArtworks = response.data.Result.map(artwork => ({
-          ...artwork,
-          Status: artwork.Status || 'In Progress' // Set default status if empty
-        }));
-        setArtworks(transformedArtworks);
-      } else {
-        console.error('Invalid response format:', response.data);
-        setError('Invalid data format received from server');
-      }
-    } catch (err) {
-      console.error('Error fetching artwork:', err.response?.data || err.message);
-      setError(err.response?.data?.error || err.response?.data?.Message || 'Failed to load artwork data');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Fetch data when search parameters change
-  useEffect(() => {
-    fetchArtwork();
-  }, [searchParams]); // Re-fetch when any search parameter changes
-
-  // Handle drag end
-  const onDragEnd = async (result) => {
-    const { draggableId, destination, source } = result;
-    
-    if (!destination || destination.droppableId === source.droppableId) {
-      return;
-    }
-
-    const newStatus = destination.droppableId;
-    const original = [...artworks];
-
-    try {
-      // Optimistic update
-      const updated = artworks.map((art) => {
-        if (art.ID_Design.toString() === draggableId) {
-          return { ...art, Status: newStatus };
+    const fetchArtworkRequests = async () => {
+        try {
+            setLoading(true);
+            const response = await axios.get('/api/artwork/requests');
+            setArtworkRequests(response.data);
+            setError(null);
+        } catch (err) {
+            console.error('Error fetching artwork requests:', err);
+            setError('Failed to load artwork requests');
+        } finally {
+            setLoading(false);
         }
-        return art;
-      });
-      setArtworks(updated);
+    };
 
-      // Make API call
-      const baseUrl = process.env.NODE_ENV === 'production'
-        ? `/api/artwork/${draggableId}`
-        : `http://localhost:3001/api/artwork/${draggableId}`;
+    const handleStatusChange = async (requestId, newStatus) => {
+        try {
+            await axios.put(`/api/artwork/status/${requestId}`, { status: newStatus });
+            // Refresh the list after status update
+            fetchArtworkRequests();
+        } catch (err) {
+            console.error('Error updating status:', err);
+            alert('Failed to update status');
+        }
+    };
 
-      await axios.put(baseUrl, {
-        Status: newStatus
-      });
+    const formatDate = (dateString) => {
+        if (!dateString) return '';
+        const date = new Date(dateString);
+        return date.toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
+        });
+    };
 
-      // Show success message
-      toast.success(`Artwork moved to ${newStatus}`);
-      
-      // Refresh data
-      await fetchArtwork();
-    } catch (error) {
-      console.error('Error updating status:', error.response?.data || error.message);
-      setArtworks(original);
-      toast.error(error.response?.data?.error || 'Failed to update status. Please try again.');
-    }
-  };
+    // Filter and search logic
+    const filteredRequests = artworkRequests.filter(request => {
+        const matchesSearch = searchTerm === '' || 
+            request.CompanyName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            request.ID_Design?.toString().includes(searchTerm) ||
+            FILE_FIELDS.some(field => 
+                request[field.key]?.path?.toLowerCase().includes(searchTerm.toLowerCase())
+            );
 
-  // Group artworks by status
-  const groupedArtworks = STATUS_COLUMNS.reduce((acc, status) => {
-    acc[status] = artworks.filter(art => art.Status === status) || [];
-    return acc;
-  }, {});
+        const matchesStatus = statusFilter === 'all' || 
+            (statusFilter === 'pending' && !request.Status) ||
+            (request.Status?.toLowerCase() === statusFilter);
 
-  if (loading) return (
-    <div className="loading">
-      <div className="spinner"></div>
-      <p>Loading artwork...</p>
-    </div>
-  );
-  
-  if (error) return (
-    <div className="error">
-      <h3>Error</h3>
-      <p>{error}</p>
-      <button onClick={fetchArtwork} className="retry-button">
-        Retry
-      </button>
-    </div>
-  );
+        return matchesSearch && matchesStatus;
+    });
 
-  return (
-    <div className="artwork-dashboard">
-      <ToastContainer />
-      {selectedImage && selectedArtwork && (
-        <ImageViewer
-          artwork={selectedArtwork}
-          imageField={selectedImage}
-          onClose={() => {
-            setSelectedImage(null);
-            setSelectedArtwork(null);
-          }}
-        />
-      )}
-      <h1>Artwork Dashboard</h1>
-      <div className="dashboard-controls">
-        <form className="search-form" onSubmit={(e) => { e.preventDefault(); fetchArtwork(); }}>
-          <div className="search-group">
-            <label>Company Name</label>
-            <input
-              type="text"
-              className="search-input"
-              value={searchParams.company}
-              onChange={(e) => handleSearchChange('company', e.target.value)}
-              placeholder="Search company..."
-            />
-          </div>
+    // Count files with issues
+    const getMissingFilesCount = () => {
+        return artworkRequests.reduce((count, request) => {
+            return count + FILE_FIELDS.reduce((fieldCount, field) => {
+                return fieldCount + (request[field.key] && !request[field.key].exists ? 1 : 0);
+            }, 0);
+        }, 0);
+    };
 
-          <div className="search-group">
-            <label>Status</label>
-            <select
-              className="search-input"
-              value={searchParams.status}
-              onChange={(e) => handleSearchChange('status', e.target.value)}
-            >
-              <option value="">All Statuses</option>
-              {STATUS_OPTIONS.map(status => (
-                <option key={status} value={status}>{status}</option>
-              ))}
-            </select>
-          </div>
+    if (loading) return <div className="loading">Loading artwork requests...</div>;
+    if (error) return <div className="error">{error}</div>;
 
-          <div className="search-group">
-            <label>User Email</label>
-            <input
-              type="email"
-              className="search-input"
-              value={searchParams.rep}
-              onChange={(e) => handleSearchChange('rep', e.target.value)}
-              placeholder="Search by email..."
-            />
-          </div>
-
-          <div className="search-group">
-            <label>Date From</label>
-            <input
-              type="date"
-              className="search-input"
-              value={searchParams.dateFrom}
-              onChange={(e) => handleSearchChange('dateFrom', e.target.value)}
-            />
-          </div>
-
-          <div className="search-group">
-            <label>Date To</label>
-            <input
-              type="date"
-              className="search-input"
-              value={searchParams.dateTo}
-              onChange={(e) => handleSearchChange('dateTo', e.target.value)}
-            />
-          </div>
-
-          <div className="search-group">
-            <label>Sort By</label>
-            <div className="sort-controls">
-              <select
-                className="search-input"
-                value={searchParams.sortBy}
-                onChange={(e) => handleSearchChange('sortBy', e.target.value)}
-              >
-                {SORT_OPTIONS.map(option => (
-                  <option key={option.value} value={option.value}>{option.label}</option>
-                ))}
-              </select>
-              <select
-                className="search-input"
-                value={searchParams.sortDir}
-                onChange={(e) => handleSearchChange('sortDir', e.target.value)}
-              >
-                <option value="asc">Ascending</option>
-                <option value="desc">Descending</option>
-              </select>
-            </div>
-          </div>
-
-          <div className="search-buttons">
-            <button type="button" className="search-button secondary" onClick={clearSearch}>
-              Clear
-            </button>
-            <button type="submit" className="search-button primary">
-              Search
-            </button>
-          </div>
-        </form>
-      </div>
-      
-      <DragDropContext onDragEnd={onDragEnd}>
-        <div className="artwork-columns">
-          {STATUS_COLUMNS.map(status => (
-            <Droppable droppableId={status} key={status}>
-              {(provided) => (
-                <div
-                  ref={provided.innerRef}
-                  {...provided.droppableProps}
-                  className="artwork-column"
-                >
-                  <h2 style={{ color: STATUS_COLORS[status] }}>{status}</h2>
-                  <div className="artwork-list">
-                    {(groupedArtworks[status] || []).map((artwork, index) => (
-                      <Draggable
-                        key={artwork.ID_Design}
-                        draggableId={artwork.ID_Design.toString()}
-                        index={index}
-                      >
-                        {(provided, snapshot) => (
-                          <div
-                            ref={provided.innerRef}
-                            {...provided.draggableProps}
-                            {...provided.dragHandleProps}
-                            className={`artwork-card ${snapshot.isDragging ? 'dragging' : ''}`}
-                            style={{
-                              ...provided.draggableProps.style,
-                              opacity: snapshot.isDragging ? 0.8 : 1
-                            }}
-                          >
-                            <div className="artwork-images">
-                              {['One', 'Two', 'Three', 'Four'].map((field) => {
-                                const fieldName = `File_Upload_${field}`;
-                                return artwork[fieldName] ? (
-                                  <div 
-                                    key={field} 
-                                    className="artwork-image"
-                                    onClick={() => {
-                                      setSelectedImage(fieldName);
-                                      setSelectedArtwork(artwork);
-                                    }}
-                                  >
-                                    <div className="image-container">
-                                      {artwork[fieldName] && (
-                                        <>
-                                          <img 
-                                            src={`${process.env.NODE_ENV === 'production' ? '' : 'http://localhost:3001'}/api/artwork/${artwork.ID_Design}/image/${field}`}
-                                            alt={`Design ${field} for ${artwork.CompanyName}`}
-                                            onError={(e) => {
-                                              console.error(`Image ${field} load error for ID:`, artwork.ID_Design);
-                                              console.error('File path:', artwork[fieldName]);
-                                              e.target.style.display = 'none';
-                                              e.target.parentElement.classList.add('error');
-                                            }}
-                                            style={{ maxHeight: '120px', objectFit: 'contain', cursor: 'pointer' }}
-                                          />
-                                          <div className="file-info">
-                                            <div className="file-name">{artwork[fieldName].split('/').pop()}</div>
-                                            <div className="file-type">{artwork[fieldName].split('.').pop().toUpperCase()}</div>
-                                          </div>
-                                        </>
-                                      )}
-                                      {!artwork[fieldName] && (
-                                        <div className="no-image-text">No Image</div>
-                                      )}
-                                    </div>
-                                  </div>
-                                ) : null;
-                              })}
-                              {!artwork.File_Upload_One && 
-                               !artwork.File_Upload_Two && 
-                               !artwork.File_Upload_Three && 
-                               !artwork.File_Upload_Four && (
-                                <div className="no-image">No Images</div>
-                              )}
-                            </div>
-                            <div className="artwork-details">
-                              <h3>{artwork.CompanyName}</h3>
-                              <p>Due: {artwork.Due_Date ? new Date(artwork.Due_Date).toLocaleDateString() : 'Not set'}</p>
-                              <p>Design ID: #{artwork.ID_Design}</p>
-                            </div>
-                          </div>
-                        )}
-                      </Draggable>
-                    ))}
-                    {provided.placeholder}
-                  </div>
+    return (
+        <div className="artwork-dashboard">
+            <div className="dashboard-header">
+                <h1>Artwork Requests</h1>
+                <div className="filters">
+                    <input
+                        type="text"
+                        placeholder="Search by company, ID, or filename..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="search-input"
+                    />
+                    <select
+                        value={statusFilter}
+                        onChange={(e) => setStatusFilter(e.target.value)}
+                        className="status-filter"
+                    >
+                        <option value="all">All Status</option>
+                        <option value="pending">Pending</option>
+                        <option value="in progress">In Progress</option>
+                        <option value="completed">Completed</option>
+                        <option value="rejected">Rejected</option>
+                    </select>
                 </div>
-              )}
-            </Droppable>
-          ))}
+            </div>
+
+            <div className="artwork-stats">
+                <div className="stat-item">
+                    <span className="stat-label">Total Requests:</span>
+                    <span className="stat-value">{artworkRequests.length}</span>
+                </div>
+                <div className="stat-item">
+                    <span className="stat-label">Filtered:</span>
+                    <span className="stat-value">{filteredRequests.length}</span>
+                </div>
+                <div className="stat-item">
+                    <span className="stat-label">Missing Files:</span>
+                    <span className="stat-value">{getMissingFilesCount()}</span>
+                </div>
+            </div>
+
+            <div className="artwork-grid">
+                {filteredRequests.map(request => (
+                    <div key={request.ID_Design} className="artwork-card">
+                        <div className="artwork-header">
+                            <h3>{request.CompanyName}</h3>
+                            <span className={`status ${request.Status?.toLowerCase().replace(/\s+/g, '-') || 'pending'}`}>
+                                {request.Status || 'Pending'}
+                            </span>
+                        </div>
+
+                        {/* Files Display */}
+                        <div className="artwork-files">
+                            {FILE_FIELDS.map(field => 
+                                request[field.key] ? (
+                                    <div key={field.key} className="artwork-file">
+                                        <div className="file-header">
+                                            <span className="file-label">{field.label}</span>
+                                            {request[field.key].exists ? (
+                                                <span className="file-status success">Found</span>
+                                            ) : (
+                                                <span className="file-status error">Missing</span>
+                                            )}
+                                        </div>
+                                        <ImageViewer filePath={request[field.key]} />
+                                    </div>
+                                ) : null
+                            )}
+                        </div>
+
+                        <div className="artwork-details">
+                            <p><strong>Design ID:</strong> {request.ID_Design}</p>
+                            {request.Due_Date && (
+                                <p><strong>Due Date:</strong> {formatDate(request.Due_Date)}</p>
+                            )}
+                            {request.Notes && (
+                                <p><strong>Notes:</strong> {request.Notes}</p>
+                            )}
+                        </div>
+
+                        <div className="artwork-actions">
+                            <select 
+                                value={request.Status || ''} 
+                                onChange={(e) => handleStatusChange(request.ID_Design, e.target.value)}
+                                className={`status-select ${request.Status?.toLowerCase().replace(/\s+/g, '-') || 'pending'}`}
+                            >
+                                <option value="">Pending</option>
+                                <option value="In Progress">In Progress</option>
+                                <option value="Completed">Completed</option>
+                                <option value="Rejected">Rejected</option>
+                            </select>
+                        </div>
+                    </div>
+                ))}
+            </div>
+
+            {filteredRequests.length === 0 && (
+                <div className="no-results">
+                    No artwork requests found matching your criteria
+                </div>
+            )}
         </div>
-      </DragDropContext>
-    </div>
-  );
+    );
 };
 
 export default ArtworkDashboard;
