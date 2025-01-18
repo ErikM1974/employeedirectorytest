@@ -1,12 +1,23 @@
-chore: Add project configuration and support files
+WIP: Image viewer improvements and fixes
 
-- Add .gitignore to exclude unnecessary files
-- Add package.json files for root, client, and server
-- Add public directory with index.html
-- Add server configuration files (upload.js, errorHandler.js)
-- Add employee routes for backend
-- Add uploads directory for file storage
-- Add Procfile for deployment
-- Add README.md with project documentation
+Changes made:
+- Simplified image viewer component structure
+- Added proper loading state management
+- Improved modal positioning and layout
+- Added mobile responsiveness
+- Fixed scroll locking issues
 
-These files provide the necessary configuration and structure for the application to run properly.
+Known issues:
+- Image loading still needs optimization
+- Some layout shifts may occur during loading
+- Modal behavior needs further refinement
+
+Next steps:
+- Optimize image loading performance
+- Add error handling for failed loads
+- Improve loading state visual feedback
+- Further stabilize modal behavior
+
+Note: This is a work in progress commit. The image viewer functionality 
+is being actively improved to resolve remaining issues with image loading 
+and modal interactions.

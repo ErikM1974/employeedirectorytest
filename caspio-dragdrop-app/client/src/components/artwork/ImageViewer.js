@@ -1,8 +1,22 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import ReactDOM from 'react-dom';
 import './ImageViewer.css';
 
+const Modal = ({ show, onClose, children }) => {
+    if (!show) return null;
+
+    return ReactDOM.createPortal(
+        <div className="modal-backdrop" onClick={onClose}>
+            <div className="modal-container" onClick={e => e.stopPropagation()}>
+                {children}
+            </div>
+        </div>,
+        document.body
+    );
+};
+
 const ImageViewer = ({ filePath }) => {
-    const [showPreview, setShowPreview] = useState(false);
+    const [showModal, setShowModal] = useState(false);
     const [imageLoaded, setImageLoaded] = useState(false);
 
     // Get file info
@@ -12,61 +26,67 @@ const ImageViewer = ({ filePath }) => {
     const fileName = path.split('/').pop() || '';
     const fileExt = fileName.split('.').pop()?.toLowerCase() || '';
     
-    const isImage = ['jpg', 'jpeg', 'png', 'gif'].includes(fileExt);
-
-    const handlePreview = () => {
-        if (!showPreview) {
-            setImageLoaded(false);
-            setShowPreview(true);
+    useEffect(() => {
+        if (showModal) {
             document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = '';
         }
-    };
+        return () => {
+            document.body.style.overflow = '';
+        };
+    }, [showModal]);
 
-    const handleClose = () => {
-        setShowPreview(false);
-        document.body.style.overflow = 'auto';
-    };
+    if (!['jpg', 'jpeg', 'png', 'gif'].includes(fileExt)) {
+        return null;
+    }
 
     const handleImageLoad = () => {
         setImageLoaded(true);
     };
 
+    const openModal = (e) => {
+        e.stopPropagation();
+        setShowModal(true);
+        setImageLoaded(false);
+    };
+
+    const closeModal = (e) => {
+        if (e) e.stopPropagation();
+        setShowModal(false);
+        setImageLoaded(false);
+    };
+
     return (
-        <div className="image-preview">
+        <div className="viewer">
             {/* Thumbnail */}
-            <div className="preview-thumb" onClick={handlePreview}>
-                {isImage && (
-                    <img 
-                        src={fileUrl} 
-                        alt={fileName} 
-                        className="thumb-img"
-                    />
-                )}
+            <div className="thumbnail" onClick={openModal}>
+                <img 
+                    src={fileUrl} 
+                    alt={fileName}
+                    className="thumb-img"
+                />
             </div>
 
-            {/* Preview Modal */}
-            {showPreview && (
-                <div className="preview-modal" onClick={handleClose}>
-                    <div className="preview-content" onClick={e => e.stopPropagation()}>
-                        {!imageLoaded && (
-                            <div className="loading">Loading...</div>
-                        )}
-                        <img 
-                            src={fileUrl} 
-                            alt={fileName} 
-                            onLoad={handleImageLoad}
-                            className={imageLoaded ? 'loaded' : ''}
-                        />
-                        <button 
-                            className="preview-close" 
-                            onClick={handleClose}
-                            aria-label="Close preview"
-                        >
-                            ×
-                        </button>
-                    </div>
-                </div>
-            )}
+            {/* Modal */}
+            <Modal show={showModal} onClose={closeModal}>
+                {!imageLoaded && (
+                    <div className="loading">Loading...</div>
+                )}
+                <img 
+                    src={fileUrl} 
+                    alt={fileName}
+                    className={`modal-img ${imageLoaded ? 'loaded' : ''}`}
+                    onLoad={handleImageLoad}
+                />
+                <button 
+                    className="close-btn"
+                    onClick={closeModal}
+                    aria-label="Close"
+                >
+                    ×
+                </button>
+            </Modal>
         </div>
     );
 };
