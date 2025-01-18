@@ -20,47 +20,41 @@ router.get('/requests', async (req, res) => {
         );
 
         // Add file metadata to each record
-        const records = response.data.Result.map(record => {
-            const fileFields = {};
-            ['File_Upload_One', 'File_Upload_Two', 'File_Upload_Three', 'File_Upload_Four'].forEach(field => {
-                if (record[field]) {
-                    fileFields[field] = {
-                        path: record[field],
-                        exists: true, // We'll verify this when fetching the file
-                        metadata: {
-                            contentType: 'image/jpeg', // Will be determined when fetching
-                            filePath: record[field]
-                        }
-                    };
-                } else {
-                    fileFields[field] = null;
-                }
-            });
-
-            return {
-                ...record,
-                ...fileFields
-            };
-        });
+        const records = response.data.Result.map(record => ({
+            ...record,
+            files: ['File_Upload_One', 'File_Upload_Two', 'File_Upload_Three', 'File_Upload_Four']
+                .filter(field => record[field])
+                .map(field => ({
+                    path: record[field],
+                    url: `/api/artwork/file/${encodeURIComponent(record[field])}`,
+                    filename: record[field].split('/').pop()
+                }))
+        }));
 
         res.json(records);
     } catch (error) {
         console.error('Error fetching artwork requests:', error);
-        if (error.response) {
-            console.error('Response status:', error.response.status);
-            console.error('Response data:', error.response.data);
-        }
         res.status(500).json({ error: 'Failed to fetch artwork requests' });
     }
 });
 
-// Get file content by file path
+// Get file content by file path with caching
 router.get('/file/:filePath(*)', async (req, res) => {
     try {
         const token = await tokenManager.getToken();
         const { filePath } = req.params;
 
-        console.log('Fetching file:', filePath);
+        // Set caching headers
+        res.set({
+            'Cache-Control': 'public, max-age=31536000', // Cache for 1 year
+            'ETag': Buffer.from(filePath).toString('base64')
+        });
+
+        // Check if browser has cached version
+        const ifNoneMatch = req.get('If-None-Match');
+        if (ifNoneMatch === Buffer.from(filePath).toString('base64')) {
+            return res.status(304).end();
+        }
 
         // Get file using the path endpoint
         const fileResponse = await axios.get(
@@ -77,29 +71,18 @@ router.get('/file/:filePath(*)', async (req, res) => {
             }
         );
 
-        // Get content type from response headers
-        const contentType = fileResponse.headers['content-type'];
-        const filename = fileResponse.headers['filename'];
-
-        // Set appropriate headers
-        res.set('Content-Type', contentType);
-        res.set('Content-Disposition', `inline; filename="${filename}"`);
-        res.set('Cache-Control', 'public, max-age=31536000'); // Cache for 1 year
+        // Set content type and other headers
+        res.set({
+            'Content-Type': fileResponse.headers['content-type'],
+            'Content-Disposition': `inline; filename="${filePath.split('/').pop()}"`,
+            'Content-Length': fileResponse.data.length
+        });
 
         // Send the file
         res.send(fileResponse.data);
 
     } catch (error) {
         console.error('Error serving file:', error);
-        if (error.response) {
-            console.error('Response status:', error.response.status);
-            console.error('Response headers:', error.response.headers);
-            if (error.response.data instanceof Buffer) {
-                console.error('Response data is binary (length:', error.response.data.length, 'bytes)');
-            } else {
-                console.error('Response data:', error.response.data);
-            }
-        }
         if (error.response?.status === 404) {
             return res.status(404).json({ error: 'File not found' });
         }

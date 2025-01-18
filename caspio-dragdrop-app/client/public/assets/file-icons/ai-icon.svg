@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="48px" height="48px" viewBox="0 0 48 48" version="1.1" xmlns="http://www.w3.org/2000/svg">
+    <title>Adobe Illustrator Icon</title>
+    <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <rect fill="#330000" x="0" y="0" width="48" height="48" rx="4"/>
+        <text font-family="Arial-BoldMT, Arial" font-size="24" font-weight="bold" fill="#FF9A00">
+            <tspan x="12" y="34">Ai</tspan>
+        </text>
+    </g>
+</svg>
