@@ -1,0 +1,19 @@
+{
+  "name": "caspio-dragdrop-app",
+  "version": "1.0.0",
+  "engines": {
+    "node": ">=14.x"
+  },
+  "scripts": {
+    "start": "concurrently \"cd client && npm start\" \"cd server && npm run dev\"",
+    "heroku-postbuild": "cd server && npm install && cd ../client && npm install && npm run build",
+    "build": "cd client && npm run build"
+  },
+  "cacheDirectories": [
+    "server/node_modules",
+    "client/node_modules"
+  ],
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}

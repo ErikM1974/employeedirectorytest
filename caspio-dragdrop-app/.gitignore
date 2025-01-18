@@ -1,0 +1,27 @@
+# Dependencies
+node_modules/
+package-lock.json
+
+# Environment files
+.env
+.env.development
+.env.production
+
+# Build files
+build/
+dist/
+
+# Test files
+test-*.js
+test-*/
+
+# Backup files
+*.backup
+
+# IDE files
+.vscode/
+.idea/
+
+# Logs
+*.log
+npm-debug.log*
