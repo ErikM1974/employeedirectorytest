@@ -1,14 +1,12 @@
-feat(ui): enhance artwork dashboard with animations and visual polish
+chore: Add project configuration and support files
 
-- Add gradient animations to titles and status badges
-- Improve status badge visibility with glow effects
-- Add smooth hover animations for company names
-- Enhance card interactions with lift effects
-- Add staggered fade-in animations for cards
-- Improve loading and error states
-- Add shimmer effect for loading states
-- Enhance form controls with focus states
-- Add subtle animations to file previews
-- Improve overall visual hierarchy and spacing
+- Add .gitignore to exclude unnecessary files
+- Add package.json files for root, client, and server
+- Add public directory with index.html
+- Add server configuration files (upload.js, errorHandler.js)
+- Add employee routes for backend
+- Add uploads directory for file storage
+- Add Procfile for deployment
+- Add README.md with project documentation
 
-These changes make the interface more engaging and provide better visual feedback for user interactions.
+These files provide the necessary configuration and structure for the application to run properly.
