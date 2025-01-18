@@ -1,10 +1,14 @@
-feat(artwork): enhance image display in artwork dashboard
+feat(ui): enhance artwork dashboard with animations and visual polish
 
-- Change image aspect ratio to 16/9 for better previews
-- Add hover effects to show full image content
-- Add fullscreen preview functionality
-- Improve image loading and error states
-- Add click handlers for better interaction
-- Improve mobile responsiveness
-- Add file metadata display
-- Add download functionality
+- Add gradient animations to titles and status badges
+- Improve status badge visibility with glow effects
+- Add smooth hover animations for company names
+- Enhance card interactions with lift effects
+- Add staggered fade-in animations for cards
+- Improve loading and error states
+- Add shimmer effect for loading states
+- Enhance form controls with focus states
+- Add subtle animations to file previews
+- Improve overall visual hierarchy and spacing
+
+These changes make the interface more engaging and provide better visual feedback for user interactions.

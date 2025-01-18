@@ -8,142 +8,175 @@ const ImageViewer = ({ filePath }) => {
 
     if (!filePath) return null;
 
-    const { path, exists, metadata } = filePath;
-    
-    // Use external key for file access
-    const imageUrl = metadata?.externalKey 
-        ? `/api/artwork/file/${encodeURIComponent(metadata.externalKey)}`
-        : null;
-
-    // Format file info
-    const getFileInfo = () => {
-        if (!metadata) return null;
-        const size = Math.round(metadata.size / 1024);
-        const date = new Date(metadata.dateCreated).toLocaleDateString();
-        const type = metadata.contentType.split('/')[1].toUpperCase();
-        return `${size} KB • ${type} • ${date}`;
+    // Get the raw path string
+    const getRawPath = () => {
+        if (typeof filePath === 'string') return filePath;
+        if (typeof filePath === 'object' && filePath !== null && typeof filePath.path === 'string') {
+            return filePath.path;
+        }
+        return '';
     };
 
-    // For downloading the file
-    const handleDownload = (e) => {
-        e.stopPropagation(); // Prevent triggering fullscreen
-        if (imageUrl) {
-            window.open(imageUrl, '_blank');
+    // Clean up the path
+    const rawPath = getRawPath();
+    const cleanPath = rawPath.startsWith('/') ? rawPath.slice(1) : rawPath;
+    const imageUrl = cleanPath ? `/api/artwork/file/${encodeURIComponent(cleanPath)}` : '';
+    
+    // Extract filename from path
+    const getFileName = (path) => {
+        if (typeof path !== 'string' || !path) return '';
+        const parts = path.split('/');
+        return parts[parts.length - 1] || '';
+    };
+
+    // Get file type from filename
+    const getFileType = (filename) => {
+        if (!filename) return 'unknown';
+        const ext = filename.split('.').pop()?.toLowerCase() || '';
+        switch (ext) {
+            case 'jpg':
+            case 'jpeg':
+            case 'png':
+            case 'gif':
+                return 'image';
+            case 'pdf':
+                return 'pdf';
+            default:
+                return 'unknown';
         }
     };
 
-    // Toggle fullscreen preview
+    // For downloading or opening the file
+    const handleFileAction = (e, newTab = false) => {
+        e.stopPropagation(); // Prevent triggering fullscreen
+        if (imageUrl) {
+            window.open(imageUrl, newTab ? '_blank' : '_self');
+        }
+    };
+
+    // Toggle fullscreen preview (only for images)
     const toggleFullscreen = () => {
-        if (exists && imageUrl && !loading && !error) {
+        if (!loading && !error && getFileType(rawPath) === 'image') {
             setIsFullscreen(!isFullscreen);
         }
     };
 
+    const filename = getFileName(rawPath);
+    const fileType = getFileType(rawPath);
+
+    // Render PDF preview
+    if (fileType === 'pdf') {
+        return (
+            <div className="image-viewer">
+                <div className="image-container">
+                    <div className="pdf-preview">
+                        <div className="pdf-icon">📄</div>
+                        <div className="pdf-filename">{filename}</div>
+                        <div className="pdf-actions">
+                            <button 
+                                className="pdf-button"
+                                onClick={(e) => handleFileAction(e, true)}
+                            >
+                                Open PDF
+                            </button>
+                            <button 
+                                className="pdf-button"
+                                onClick={(e) => handleFileAction(e, false)}
+                            >
+                                Download
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    // Render image preview
     return (
         <div className="image-viewer">
             <div 
                 className={`image-container ${loading ? 'loading' : ''} ${error ? 'error' : ''}`}
                 onClick={toggleFullscreen}
             >
-                {!exists ? (
+                <img 
+                    src={imageUrl}
+                    alt={filename}
+                    onLoad={() => {
+                        console.log('Image loaded successfully:', rawPath);
+                        setLoading(false);
+                        setError(false);
+                    }}
+                    onError={(e) => {
+                        console.error('Error loading image:', rawPath);
+                        setLoading(false);
+                        setError(true);
+                    }}
+                    style={{ display: loading || error ? 'none' : 'block' }}
+                />
+                {loading && (
+                    <div className="loading-placeholder">
+                        <div className="loading-spinner"></div>
+                        <div>Loading {filename}</div>
+                    </div>
+                )}
+                {error && (
                     <div className="error-placeholder">
                         <div className="error-icon">!</div>
-                        <div>File not found in Caspio</div>
+                        <div>Failed to Load File</div>
                         <div className="error-details">
-                            <div className="filename">{path}</div>
+                            <div className="filename">{filename}</div>
+                            <div className="file-type">
+                                {fileType === 'image' ? 'Image File' : 
+                                 fileType === 'pdf' ? 'PDF Document' : 
+                                 'File'}
+                            </div>
+                            <div className="error-actions">
+                                <button 
+                                    onClick={(e) => handleFileAction(e, true)}
+                                    className="retry-button"
+                                >
+                                    Open in new tab
+                                </button>
+                                <button 
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setLoading(true);
+                                        setError(false);
+                                        // Force reload the image
+                                        const img = document.createElement('img');
+                                        img.src = `${imageUrl}?t=${Date.now()}`;
+                                        img.onload = () => {
+                                            setLoading(false);
+                                            // Update the displayed image
+                                            const displayedImg = document.querySelector(`img[src^="${imageUrl}"]`);
+                                            if (displayedImg) {
+                                                displayedImg.src = img.src;
+                                            }
+                                        };
+                                        img.onerror = () => {
+                                            setLoading(false);
+                                            setError(true);
+                                        };
+                                    }}
+                                    className="retry-button"
+                                >
+                                    Retry
+                                </button>
+                            </div>
                         </div>
                     </div>
-                ) : !imageUrl ? (
-                    <div className="error-placeholder">
-                        <div className="error-icon">!</div>
-                        <div>Missing file metadata</div>
-                        <div className="error-details">
-                            <div className="filename">{path}</div>
-                        </div>
-                    </div>
-                ) : (
-                    <>
-                        <img 
-                            src={imageUrl}
-                            alt={path}
-                            onLoad={() => {
-                                console.log('Image loaded successfully:', path);
-                                setLoading(false);
-                                setError(false);
-                            }}
-                            onError={(e) => {
-                                console.error('Error loading image:', path);
-                                setLoading(false);
-                                setError(true);
-                            }}
-                            style={{ display: loading || error ? 'none' : 'block' }}
-                        />
-                        {loading && (
-                            <div className="loading-placeholder">
-                                <div className="loading-spinner"></div>
-                                <div>Loading {path}</div>
-                                {metadata && <div className="file-info">{getFileInfo()}</div>}
-                            </div>
-                        )}
-                        {error && (
-                            <div className="error-placeholder">
-                                <div className="error-icon">!</div>
-                                <div>Failed to load image</div>
-                                <div className="error-details">
-                                    <div className="filename">{path}</div>
-                                    {metadata && <div className="file-info">{getFileInfo()}</div>}
-                                    <div className="error-actions">
-                                        <button 
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                window.open(imageUrl, '_blank');
-                                            }}
-                                            className="retry-button"
-                                        >
-                                            Open in new tab
-                                        </button>
-                                        <button 
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                setLoading(true);
-                                                setError(false);
-                                                // Force reload the image
-                                                const img = document.createElement('img');
-                                                img.src = `${imageUrl}?t=${Date.now()}`;
-                                                img.onload = () => {
-                                                    setLoading(false);
-                                                    // Update the displayed image
-                                                    const displayedImg = document.querySelector(`img[src^="${imageUrl}"]`);
-                                                    if (displayedImg) {
-                                                        displayedImg.src = img.src;
-                                                    }
-                                                };
-                                                img.onerror = () => {
-                                                    setLoading(false);
-                                                    setError(true);
-                                                };
-                                            }}
-                                            className="retry-button"
-                                        >
-                                            Retry
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-                    </>
                 )}
             </div>
             
-            {exists && imageUrl && !error && (
+            {!error && (
                 <div className="image-footer">
-                    {metadata && <div className="file-info">{getFileInfo()}</div>}
                     <button 
-                        onClick={handleDownload} 
+                        onClick={(e) => handleFileAction(e, false)} 
                         className="download-button"
                         disabled={loading}
                     >
-                        {loading ? 'Loading...' : `Download ${path}`}
+                        {loading ? 'Loading...' : `Download ${filename}`}
                     </button>
                 </div>
             )}
@@ -152,7 +185,7 @@ const ImageViewer = ({ filePath }) => {
                 <div className="fullscreen-preview" onClick={() => setIsFullscreen(false)}>
                     <img 
                         src={imageUrl} 
-                        alt={path}
+                        alt={filename}
                         onClick={(e) => e.stopPropagation()} // Prevent closing when clicking image
                     />
                 </div>

@@ -10,6 +10,13 @@ const FILE_FIELDS = [
     { key: 'File_Upload_Four', label: 'File 4' }
 ];
 
+const STATUS_TOOLTIPS = {
+    pending: 'Artwork is awaiting review',
+    'in progress': 'Artwork is being processed',
+    completed: 'Artwork has been approved',
+    rejected: 'Artwork needs revision'
+};
+
 const ArtworkDashboard = () => {
     const [artworkRequests, setArtworkRequests] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -38,7 +45,6 @@ const ArtworkDashboard = () => {
     const handleStatusChange = async (requestId, newStatus) => {
         try {
             await axios.put(`/api/artwork/status/${requestId}`, { status: newStatus });
-            // Refresh the list after status update
             fetchArtworkRequests();
         } catch (err) {
             console.error('Error updating status:', err);
@@ -56,13 +62,18 @@ const ArtworkDashboard = () => {
         });
     };
 
-    // Filter and search logic
+    const getFileName = (filePath) => {
+        if (typeof filePath !== 'string') return '';
+        const parts = filePath.split('/');
+        return parts[parts.length - 1] || '';
+    };
+
     const filteredRequests = artworkRequests.filter(request => {
         const matchesSearch = searchTerm === '' || 
             request.CompanyName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
             request.ID_Design?.toString().includes(searchTerm) ||
             FILE_FIELDS.some(field => 
-                request[field.key]?.path?.toLowerCase().includes(searchTerm.toLowerCase())
+                request[field.key]?.toLowerCase().includes(searchTerm.toLowerCase())
             );
 
         const matchesStatus = statusFilter === 'all' || 
@@ -72,21 +83,22 @@ const ArtworkDashboard = () => {
         return matchesSearch && matchesStatus;
     });
 
-    // Count files with issues
-    const getMissingFilesCount = () => {
-        return artworkRequests.reduce((count, request) => {
-            return count + FILE_FIELDS.reduce((fieldCount, field) => {
-                return fieldCount + (request[field.key] && !request[field.key].exists ? 1 : 0);
-            }, 0);
-        }, 0);
-    };
-
-    if (loading) return <div className="loading">Loading artwork requests...</div>;
-    if (error) return <div className="error">{error}</div>;
+    if (loading) return (
+        <div className="loading loading-shimmer">
+            Loading artwork requests...
+        </div>
+    );
+    
+    if (error) return (
+        <div className="error">
+            <div className="error-icon">!</div>
+            {error}
+        </div>
+    );
 
     return (
         <div className="artwork-dashboard">
-            <div className="dashboard-header">
+            <div className="dashboard-header hover-lift">
                 <h1>Artwork Requests</h1>
                 <div className="filters">
                     <input
@@ -110,43 +122,28 @@ const ArtworkDashboard = () => {
                 </div>
             </div>
 
-            <div className="artwork-stats">
-                <div className="stat-item">
-                    <span className="stat-label">Total Requests:</span>
-                    <span className="stat-value">{artworkRequests.length}</span>
-                </div>
-                <div className="stat-item">
-                    <span className="stat-label">Filtered:</span>
-                    <span className="stat-value">{filteredRequests.length}</span>
-                </div>
-                <div className="stat-item">
-                    <span className="stat-label">Missing Files:</span>
-                    <span className="stat-value">{getMissingFilesCount()}</span>
-                </div>
-            </div>
-
             <div className="artwork-grid">
                 {filteredRequests.map(request => (
-                    <div key={request.ID_Design} className="artwork-card">
+                    <div key={request.ID_Design} className="artwork-card hover-lift">
                         <div className="artwork-header">
                             <h3>{request.CompanyName}</h3>
-                            <span className={`status ${request.Status?.toLowerCase().replace(/\s+/g, '-') || 'pending'}`}>
+                            <span 
+                                className={`status status-glow ${request.Status?.toLowerCase().replace(/\s+/g, '-') || 'pending'}`}
+                                data-tooltip={STATUS_TOOLTIPS[request.Status?.toLowerCase() || 'pending']}
+                            >
                                 {request.Status || 'Pending'}
                             </span>
                         </div>
 
-                        {/* Files Display */}
                         <div className="artwork-files">
                             {FILE_FIELDS.map(field => 
                                 request[field.key] ? (
-                                    <div key={field.key} className="artwork-file">
+                                    <div key={field.key} className="artwork-file hover-lift">
                                         <div className="file-header">
                                             <span className="file-label">{field.label}</span>
-                                            {request[field.key].exists ? (
-                                                <span className="file-status success">Found</span>
-                                            ) : (
-                                                <span className="file-status error">Missing</span>
-                                            )}
+                                            <span className="file-name" data-tooltip={getFileName(request[field.key])}>
+                                                {getFileName(request[field.key])}
+                                            </span>
                                         </div>
                                         <ImageViewer filePath={request[field.key]} />
                                     </div>
@@ -169,6 +166,7 @@ const ArtworkDashboard = () => {
                                 value={request.Status || ''} 
                                 onChange={(e) => handleStatusChange(request.ID_Design, e.target.value)}
                                 className={`status-select ${request.Status?.toLowerCase().replace(/\s+/g, '-') || 'pending'}`}
+                                data-tooltip="Update artwork status"
                             >
                                 <option value="">Pending</option>
                                 <option value="In Progress">In Progress</option>
@@ -181,7 +179,7 @@ const ArtworkDashboard = () => {
             </div>
 
             {filteredRequests.length === 0 && (
-                <div className="no-results">
+                <div className="no-results hover-lift">
                     No artwork requests found matching your criteria
                 </div>
             )}

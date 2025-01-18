@@ -8,21 +8,7 @@ router.get('/requests', async (req, res) => {
     try {
         const token = await tokenManager.getToken();
         
-        // 1. Get files list first to map filenames to metadata
-        const filesResponse = await axios.get(
-            `${process.env.API_BASE_URL}/files`,
-            {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                    Accept: 'application/json'
-                }
-            }
-        );
-
-        const files = filesResponse.data?.Result?.Files || [];
-        const fileMap = new Map(files.map(f => [f.Name, f]));
-
-        // 2. Get artwork requests
+        // Get artwork requests
         const response = await axios.get(
             `${process.env.API_BASE_URL}/tables/ArtRequests/records`,
             {
@@ -33,26 +19,18 @@ router.get('/requests', async (req, res) => {
             }
         );
 
-        // 3. Add file metadata to each record
+        // Add file metadata to each record
         const records = response.data.Result.map(record => {
             const fileFields = {};
             ['File_Upload_One', 'File_Upload_Two', 'File_Upload_Three', 'File_Upload_Four'].forEach(field => {
                 if (record[field]) {
-                    const fileName = record[field].replace(/^\//, '').replace(/^Artwork\//, '');
-                    const fileInfo = fileMap.get(fileName);
-                    fileFields[field] = fileInfo ? {
-                        path: fileName,
-                        exists: true,
+                    fileFields[field] = {
+                        path: record[field],
+                        exists: true, // We'll verify this when fetching the file
                         metadata: {
-                            externalKey: fileInfo.ExternalKey,
-                            contentType: fileInfo.ContentType,
-                            size: fileInfo.Size,
-                            dateCreated: fileInfo.DateCreated
+                            contentType: 'image/jpeg', // Will be determined when fetching
+                            filePath: record[field]
                         }
-                    } : {
-                        path: fileName,
-                        exists: false,
-                        metadata: null
                     };
                 } else {
                     fileFields[field] = null;
@@ -68,54 +46,45 @@ router.get('/requests', async (req, res) => {
         res.json(records);
     } catch (error) {
         console.error('Error fetching artwork requests:', error);
+        if (error.response) {
+            console.error('Response status:', error.response.status);
+            console.error('Response data:', error.response.data);
+        }
         res.status(500).json({ error: 'Failed to fetch artwork requests' });
     }
 });
 
-// Get file content by external key
-router.get('/file/:externalKey', async (req, res) => {
+// Get file content by file path
+router.get('/file/:filePath(*)', async (req, res) => {
     try {
         const token = await tokenManager.getToken();
-        const { externalKey } = req.params;
+        const { filePath } = req.params;
 
-        console.log('Fetching file:', externalKey);
+        console.log('Fetching file:', filePath);
 
-        // Get file content using ExternalKey
+        // Get file using the path endpoint
         const fileResponse = await axios.get(
-            `${process.env.API_BASE_URL}/files/${externalKey}`,
+            `${process.env.API_BASE_URL}/files/path`,
             {
+                params: {
+                    filePath: `/${filePath}` // Ensure leading slash
+                },
                 headers: {
                     Authorization: `Bearer ${token}`,
-                    Accept: '*/*'
+                    Accept: 'application/octet-stream'
                 },
                 responseType: 'arraybuffer'
             }
         );
 
-        // Get file metadata to set correct headers
-        const filesResponse = await axios.get(
-            `${process.env.API_BASE_URL}/files`,
-            {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                    Accept: 'application/json'
-                }
-            }
-        );
-
-        const files = filesResponse.data?.Result?.Files || [];
-        const fileInfo = files.find(f => f.ExternalKey === externalKey);
-
-        if (!fileInfo) {
-            console.error('File metadata not found:', externalKey);
-            return res.status(404).json({ error: 'File not found' });
-        }
+        // Get content type from response headers
+        const contentType = fileResponse.headers['content-type'];
+        const filename = fileResponse.headers['filename'];
 
         // Set appropriate headers
-        res.set('Content-Type', fileInfo.ContentType);
-        res.set('Content-Disposition', `inline; filename="${fileInfo.Name}"`);
+        res.set('Content-Type', contentType);
+        res.set('Content-Disposition', `inline; filename="${filename}"`);
         res.set('Cache-Control', 'public, max-age=31536000'); // Cache for 1 year
-        res.set('ETag', `"${fileInfo.ExternalKey}"`);
 
         // Send the file
         res.send(fileResponse.data);
@@ -125,6 +94,14 @@ router.get('/file/:externalKey', async (req, res) => {
         if (error.response) {
             console.error('Response status:', error.response.status);
             console.error('Response headers:', error.response.headers);
+            if (error.response.data instanceof Buffer) {
+                console.error('Response data is binary (length:', error.response.data.length, 'bytes)');
+            } else {
+                console.error('Response data:', error.response.data);
+            }
+        }
+        if (error.response?.status === 404) {
+            return res.status(404).json({ error: 'File not found' });
         }
         res.status(500).json({ error: 'Failed to serve file' });
     }

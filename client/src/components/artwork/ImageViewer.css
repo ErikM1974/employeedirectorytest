@@ -1,126 +1,85 @@
 .image-viewer {
     width: 100%;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
 }
 
 .image-container {
-    width: 100%;
-    aspect-ratio: 16/9;  /* Changed from 1 to 16/9 for better preview */
-    background: white;
-    border: 1px solid #e9ecef;
-    border-radius: 4px;
-    overflow: hidden;
     position: relative;
-    cursor: pointer;  /* Added to indicate clickable */
-    transition: transform 0.2s ease;  /* Added animation */
-}
-
-.image-container:hover {
-    transform: scale(1.02);  /* Added hover effect */
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);  /* Added shadow on hover */
+    width: 100%;
+    padding-top: 75%; /* 4:3 Aspect Ratio */
+    background: #fff;
+    cursor: pointer;
 }
 
 .image-container img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;  /* Changed from contain to cover */
-    transition: all 0.3s ease;
-    background: #f8f9fa;  /* Added background color */
-}
-
-.image-container:hover img {
-    object-fit: contain;  /* Show full image on hover */
-    background: #fff;  /* Lighter background on hover */
-}
-
-/* Rest of the CSS remains the same */
-.loading-placeholder {
     position: absolute;
     top: 0;
     left: 0;
-    right: 0;
-    bottom: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    background: #fff;
+}
+
+.loading-placeholder, .error-placeholder {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
     display: flex;
     flex-direction: column;
-    justify-content: center;
     align-items: center;
-    background: white;
-    color: #666;
-    font-size: 0.9rem;
-    gap: 10px;
-    padding: 20px;
-    text-align: center;
+    justify-content: center;
+    background: #f8f9fa;
+    color: #6c757d;
 }
 
 .loading-spinner {
     width: 30px;
     height: 30px;
     border: 3px solid #f3f3f3;
-    border-top: 3px solid #0d6efd;
+    border-top: 3px solid #3498db;
     border-radius: 50%;
     animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-}
-
-.error-placeholder {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    background: #fff3f4;
-    color: #dc3545;
-    padding: 20px;
-    text-align: center;
+    margin-bottom: 10px;
 }
 
 .error-icon {
-    font-size: 24px;
-    font-weight: bold;
-    width: 36px;
-    height: 36px;
-    line-height: 36px;
+    width: 40px;
+    height: 40px;
     border-radius: 50%;
     background: #dc3545;
     color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
     margin-bottom: 10px;
 }
 
 .error-details {
-    margin-top: 10px;
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
+    text-align: center;
+    padding: 10px;
 }
 
-.filename {
-    font-size: 0.85rem;
-    color: #666;
+.error-details .filename {
+    font-weight: bold;
+    margin-bottom: 5px;
     word-break: break-all;
-    margin-bottom: 4px;
 }
 
-.file-info {
-    font-size: 0.8rem;
-    color: #666;
-    opacity: 0.8;
+.error-details .file-type {
+    color: #6c757d;
+    margin-bottom: 10px;
 }
 
 .error-actions {
     display: flex;
-    gap: 8px;
-    justify-content: center;
+    gap: 10px;
     margin-top: 10px;
 }
 
@@ -130,9 +89,8 @@
     border-radius: 4px;
     background: #0d6efd;
     color: white;
-    font-size: 0.85rem;
     cursor: pointer;
-    transition: background-color 0.2s ease;
+    font-size: 14px;
 }
 
 .retry-button:hover {
@@ -140,48 +98,41 @@
 }
 
 .image-footer {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    padding: 8px;
+    padding: 10px;
     background: #f8f9fa;
-    border: 1px solid #e9ecef;
-    border-radius: 4px;
+    border-top: 1px solid #e9ecef;
 }
 
 .download-button {
     width: 100%;
     padding: 8px;
-    border: 1px solid #ced4da;
+    border: none;
     border-radius: 4px;
-    background: white;
-    color: #333;
-    font-size: 0.9rem;
+    background: #198754;
+    color: white;
     cursor: pointer;
-    transition: all 0.2s ease;
+    font-size: 14px;
 }
 
-.download-button:hover:not(:disabled) {
-    background: #f8f9fa;
-    border-color: #adb5bd;
+.download-button:hover {
+    background: #157347;
 }
 
 .download-button:disabled {
-    opacity: 0.6;
+    background: #6c757d;
     cursor: not-allowed;
 }
 
-/* Added fullscreen preview */
 .fullscreen-preview {
     position: fixed;
     top: 0;
     left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0,0,0,0.9);
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.9);
     display: flex;
-    justify-content: center;
     align-items: center;
+    justify-content: center;
     z-index: 1000;
 }
 
@@ -191,22 +142,64 @@
     object-fit: contain;
 }
 
-/* Mobile adjustments */
-@media (max-width: 768px) {
-    .error-actions {
-        flex-direction: column;
-    }
-    
-    .retry-button,
-    .download-button {
-        width: 100%;
-    }
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
 
-    .image-footer {
-        padding: 10px;
-    }
+/* PDF Preview Styles */
+.pdf-preview {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: #f8f9fa;
+    padding: 20px;
+    text-align: center;
+}
 
-    .file-info {
-        text-align: center;
-    }
+.pdf-icon {
+    width: 60px;
+    height: 60px;
+    margin-bottom: 10px;
+    color: #dc3545;
+}
+
+.pdf-filename {
+    font-weight: bold;
+    margin-bottom: 5px;
+    word-break: break-all;
+}
+
+.pdf-size {
+    color: #6c757d;
+    margin-bottom: 15px;
+    font-size: 14px;
+}
+
+.pdf-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.pdf-button {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    background: #0d6efd;
+    color: white;
+    cursor: pointer;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.pdf-button:hover {
+    background: #0b5ed7;
 }
