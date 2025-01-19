@@ -20,9 +20,8 @@ const ImageViewer = ({ filePath }) => {
     const [imageLoaded, setImageLoaded] = useState(false);
 
     // Get file info
-    const path = typeof filePath === 'string' ? filePath : filePath?.path || '';
-    const cleanPath = path.startsWith('/') ? path.slice(1) : path;
-    const fileUrl = cleanPath ? `/api/artwork/file/${encodeURIComponent(cleanPath)}` : '';
+    const path = filePath || '';
+    const fileUrl = path ? `/api/artwork/file/${encodeURIComponent(path)}` : '';
     const fileName = path.split('/').pop() || '';
     const fileExt = fileName.split('.').pop()?.toLowerCase() || '';
     

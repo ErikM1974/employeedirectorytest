@@ -26,17 +26,28 @@ router.get('/requests', async (req, res) => {
             }
         );
 
+        console.log('Raw records from Caspio:', response.data.Result.slice(0, 1));
+
         // Add file metadata to each record
-        const records = response.data.Result.map(record => ({
-            ...record,
-            files: ['File_Upload_One', 'File_Upload_Two', 'File_Upload_Three', 'File_Upload_Four']
-                .filter(field => record[field])
-                .map(field => ({
-                    path: record[field],
-                    url: `/api/artwork/file/${encodeURIComponent(record[field])}`,
-                    filename: record[field].split('/').pop()
-                }))
-        }));
+        const records = response.data.Result.map(record => {
+            const fileFields = ['File_Upload_One', 'File_Upload_Two', 'File_Upload_Three', 'File_Upload_Four'];
+            const processedRecord = { ...record };
+            
+            // Process each file field
+            fileFields.forEach(field => {
+                if (record[field]) {
+                    // Remove any leading slashes and clean the path
+                    const cleanPath = record[field].replace(/^\/+/, '');
+                    processedRecord[field] = cleanPath;
+                    console.log(`Processing ${field}:`, {
+                        original: record[field],
+                        cleaned: cleanPath
+                    });
+                }
+            });
+
+            return processedRecord;
+        });
 
         res.json(records);
     } catch (error) {
@@ -51,6 +62,12 @@ router.get('/file/:filePath(*)', async (req, res) => {
         const token = await tokenManager.getToken();
         const { filePath } = req.params;
 
+        console.log('File request:', {
+            originalPath: filePath,
+            cleanedPath: filePath.startsWith('/') ? filePath : `/${filePath}`,
+            token: token?.substring(0, 20) + '...'
+        });
+
         // Set caching headers
         res.set({
             'Cache-Control': 'public, max-age=31536000', // Cache for 1 year
@@ -63,13 +80,11 @@ router.get('/file/:filePath(*)', async (req, res) => {
             return res.status(304).end();
         }
 
-        // Get file using the path endpoint
+        // Get file using the path endpoint - match Swagger format exactly
+        const filePathWithSlash = filePath.startsWith('/') ? filePath : `/${filePath}`;
         const fileResponse = await axios.get(
-            `${process.env.API_BASE_URL}/files/path`,
+            `${process.env.API_BASE_URL}/files/path?filePath=${encodeURIComponent(filePathWithSlash)}`,
             {
-                params: {
-                    filePath: `/${filePath}` // Ensure leading slash
-                },
                 headers: {
                     Authorization: `Bearer ${token}`,
                     Accept: 'application/octet-stream'
@@ -81,7 +96,7 @@ router.get('/file/:filePath(*)', async (req, res) => {
         // Set content type and other headers
         res.set({
             'Content-Type': fileResponse.headers['content-type'],
-            'Content-Disposition': `inline; filename="${filePath.split('/').pop()}"`,
+            'Content-Disposition': `inline; filename=${encodeURIComponent(filePath.split('/').pop())}`,
             'Content-Length': fileResponse.data.length
         });
 
