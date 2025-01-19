@@ -37,13 +37,16 @@ class TokenManager {
                 clientSecret: this.clientSecret?.substring(0, 10) + '...'
             });
 
+            const params = new URLSearchParams();
+            params.append('grant_type', 'client_credentials');
+
             const response = await axios.post(
                 this.tokenEndpoint,
-                'grant_type=client_credentials',
+                params,
                 {
                     headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                    'Accept': 'application/json'
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'Accept': 'application/json'
                     },
                     auth: {
                         username: this.clientId,
@@ -127,8 +130,8 @@ class TokenManager {
 // Create singleton instance
 const tokenManager = new TokenManager(
     process.env.TOKEN_ENDPOINT,
-    process.env.CASPIO_CLIENT_ID || '25bea36404d34215e23255861c370d0fc417444f0af8e8477c',
-    process.env.CASPIO_CLIENT_SECRET || '5316be27cadd4b56a235a544c9018aa54feb64d90805430011'
+    process.env.CASPIO_CLIENT_ID,
+    process.env.CASPIO_CLIENT_SECRET
 );
 
 module.exports = tokenManager;

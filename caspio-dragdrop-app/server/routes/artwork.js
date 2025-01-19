@@ -7,14 +7,21 @@ const tokenManager = require('../auth/caspioAuth');
 router.get('/requests', async (req, res) => {
     try {
         const token = await tokenManager.getToken();
+        const page = parseInt(req.query.page) || 1;
         
-        // Get artwork requests
+        // Get artwork requests with pagination and sorting
         const response = await axios.get(
             `${process.env.API_BASE_URL}/tables/ArtRequests/records`,
             {
                 headers: {
                     Authorization: `Bearer ${token}`,
                     Accept: 'application/json'
+                },
+                params: {
+                    'q.orderBy': 'Date_Created DESC',
+                    'q.limit': 200,
+                    'q.pageSize': 20,
+                    'q.pageNumber': page
                 }
             }
         );

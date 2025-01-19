@@ -1,4 +1,5 @@
-require('dotenv').config({ path: '.env.development' });
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '.env.development') });
 const express = require('express');
 const cors = require('cors');
 const artworkRoutes = require('./routes/artwork');

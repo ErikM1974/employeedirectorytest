@@ -23,22 +23,32 @@ const ArtworkDashboard = () => {
     const [error, setError] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
 
     useEffect(() => {
-        fetchArtworkRequests();
-    }, []);
+        fetchArtworkRequests(currentPage);
+    }, [currentPage]);
 
-    const fetchArtworkRequests = async () => {
+    const fetchArtworkRequests = async (page) => {
         try {
             setLoading(true);
-            const response = await axios.get('/api/artwork/requests');
+            const response = await axios.get(`/api/artwork/requests?page=${page}`);
             setArtworkRequests(response.data);
+            // Calculate total pages based on 200 total records and 20 per page
+            setTotalPages(10); // 200/20 = 10 pages
             setError(null);
         } catch (err) {
             console.error('Error fetching artwork requests:', err);
             setError('Failed to load artwork requests');
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handlePageChange = (newPage) => {
+        if (newPage >= 1 && newPage <= totalPages) {
+            setCurrentPage(newPage);
         }
     };
 
@@ -183,6 +193,26 @@ const ArtworkDashboard = () => {
                     No artwork requests found matching your criteria
                 </div>
             )}
+
+            <div className="pagination-controls">
+                <button 
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    className="pagination-button"
+                >
+                    Previous
+                </button>
+                <span className="page-info">
+                    Page {currentPage} of {totalPages}
+                </span>
+                <button 
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    className="pagination-button"
+                >
+                    Next
+                </button>
+            </div>
         </div>
     );
 };
