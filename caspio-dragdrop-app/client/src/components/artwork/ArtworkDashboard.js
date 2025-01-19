@@ -150,24 +150,45 @@ const ArtworkDashboard = () => {
     return (
         <div className="artwork-dashboard">
             <div className="dashboard-header hover-lift">
-                <h1>Artwork Requests</h1>
-                <div className="filters">
-                    <input
-                        type="text"
-                        placeholder="Search by company name or design ID..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className={`search-input ${isSearching ? 'searching' : ''}`}
-                    />
-                    <select
-                        value={statusFilter}
-                        onChange={(e) => setStatusFilter(e.target.value)}
-                        className="status-filter"
+                <div className="header-top">
+                    <h1>Artwork Requests</h1>
+                    <div className="filters">
+                        <input
+                            type="text"
+                            placeholder="Search by company name or design ID..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className={`search-input ${isSearching ? 'searching' : ''}`}
+                        />
+                        <select
+                            value={statusFilter}
+                            onChange={(e) => setStatusFilter(e.target.value)}
+                            className="status-filter"
+                        >
+                            <option value="all">All Status</option>
+                            <option value="Awaiting Approval">Awaiting Approval</option>
+                            <option value="Completed">Completed</option>
+                        </select>
+                    </div>
+                </div>
+                <div className="pagination-controls top">
+                    <button 
+                        onClick={() => handlePageChange(currentPage - 1)}
+                        disabled={currentPage === 1}
+                        className="pagination-button"
                     >
-                        <option value="all">All Status</option>
-                        <option value="Awaiting Approval">Awaiting Approval</option>
-                        <option value="Completed">Completed</option>
-                    </select>
+                        Previous
+                    </button>
+                    <span className="page-info">
+                        Page {currentPage} of {totalPages}
+                    </span>
+                    <button 
+                        onClick={() => handlePageChange(currentPage + 1)}
+                        disabled={currentPage === totalPages}
+                        className="pagination-button"
+                    >
+                        Next
+                    </button>
                 </div>
             </div>
 
@@ -231,7 +252,7 @@ const ArtworkDashboard = () => {
                 </div>
             )}
 
-            <div className="pagination-controls">
+            <div className="pagination-controls bottom">
                 <button 
                     onClick={() => handlePageChange(currentPage - 1)}
                     disabled={currentPage === 1}
