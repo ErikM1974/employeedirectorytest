@@ -11,10 +11,8 @@ const FILE_FIELDS = [
 ];
 
 const STATUS_TOOLTIPS = {
-    pending: 'Artwork is awaiting review',
-    'in progress': 'Artwork is being processed',
-    completed: 'Artwork has been approved',
-    rejected: 'Artwork needs revision'
+    'Awaiting Approval': 'Artwork is awaiting review',
+    'Completed': 'Artwork has been approved'
 };
 
 const ArtworkDashboard = () => {
@@ -22,18 +20,54 @@ const ArtworkDashboard = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
+    const [debouncedSearch, setDebouncedSearch] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
+    const [isSearching, setIsSearching] = useState(false);
 
+    // Handle initial load
     useEffect(() => {
         fetchArtworkRequests(currentPage);
     }, [currentPage]);
 
+    // Debounce search term
+    useEffect(() => {
+        setIsSearching(true);
+        const timer = setTimeout(() => {
+            setDebouncedSearch(searchTerm);
+        }, 500); // Wait 500ms after last keystroke
+
+        return () => clearTimeout(timer);
+    }, [searchTerm]);
+
+    // Fetch when debounced search changes
+    useEffect(() => {
+        fetchArtworkRequests(1); // Reset to first page when search changes
+    }, [debouncedSearch, statusFilter]);
+
     const fetchArtworkRequests = async (page) => {
         try {
             setLoading(true);
-            const response = await axios.get(`/api/artwork/requests?page=${page}`);
+            const params = new URLSearchParams({
+                page: page.toString()
+            });
+
+            if (debouncedSearch) {
+                // Try to parse as number for ID_Design search
+                const trimmedSearch = debouncedSearch.trim();
+                const isNumber = !isNaN(trimmedSearch) && trimmedSearch !== '';
+                if (isNumber) {
+                    params.append('search', trimmedSearch); // Server will handle ID_Design formatting
+                } else {
+                    params.append('search', trimmedSearch); // Server will handle LIKE query formatting
+                }
+            }
+            if (statusFilter !== 'all') {
+                params.append('status', statusFilter);
+            }
+
+            const response = await axios.get(`/api/artwork/requests?${params}`);
             setArtworkRequests(response.data);
             // Calculate total pages based on 200 total records and 20 per page
             setTotalPages(10); // 200/20 = 10 pages
@@ -43,8 +77,10 @@ const ArtworkDashboard = () => {
             setError('Failed to load artwork requests');
         } finally {
             setLoading(false);
+            setIsSearching(false); // Reset searching state after request completes
         }
     };
+
 
     const handlePageChange = (newPage) => {
         if (newPage >= 1 && newPage <= totalPages) {
@@ -54,11 +90,28 @@ const ArtworkDashboard = () => {
 
     const handleStatusChange = async (requestId, newStatus) => {
         try {
-            await axios.put(`/api/artwork/status/${requestId}`, { status: newStatus });
-            fetchArtworkRequests();
+            console.log('Updating status:', { requestId, newStatus });
+            const response = await axios.put(`/api/artwork/status/${requestId}`, { status: newStatus });
+            
+            if (response.data.success) {
+                // Refresh the current page to show updated status
+                await fetchArtworkRequests(currentPage);
+            } else {
+                console.error('Status update failed:', response.data);
+                alert(response.data.error || 'Failed to update status. Please try again.');
+            }
         } catch (err) {
-            console.error('Error updating status:', err);
-            alert('Failed to update status');
+            console.error('Error updating status:', {
+                error: err.message,
+                response: err.response?.data,
+                details: err.response?.data?.details
+            });
+            
+            const errorMessage = err.response?.data?.error 
+                ? `${err.response.data.error}\n\nDetails: ${JSON.stringify(err.response.data.details, null, 2)}`
+                : 'Failed to update status. Please try again.';
+            
+            alert(errorMessage);
         }
     };
 
@@ -78,20 +131,8 @@ const ArtworkDashboard = () => {
         return parts[parts.length - 1] || '';
     };
 
-    const filteredRequests = artworkRequests.filter(request => {
-        const matchesSearch = searchTerm === '' || 
-            request.CompanyName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            request.ID_Design?.toString().includes(searchTerm) ||
-            FILE_FIELDS.some(field => 
-                request[field.key]?.toLowerCase().includes(searchTerm.toLowerCase())
-            );
-
-        const matchesStatus = statusFilter === 'all' || 
-            (statusFilter === 'pending' && !request.Status) ||
-            (request.Status?.toLowerCase() === statusFilter);
-
-        return matchesSearch && matchesStatus;
-    });
+    // No need to filter locally since server handles it
+    const filteredRequests = artworkRequests;
 
     if (loading) return (
         <div className="loading loading-shimmer">
@@ -113,10 +154,10 @@ const ArtworkDashboard = () => {
                 <div className="filters">
                     <input
                         type="text"
-                        placeholder="Search by company, ID, or filename..."
+                        placeholder="Search by company name or design ID..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="search-input"
+                        className={`search-input ${isSearching ? 'searching' : ''}`}
                     />
                     <select
                         value={statusFilter}
@@ -124,10 +165,8 @@ const ArtworkDashboard = () => {
                         className="status-filter"
                     >
                         <option value="all">All Status</option>
-                        <option value="pending">Pending</option>
-                        <option value="in progress">In Progress</option>
-                        <option value="completed">Completed</option>
-                        <option value="rejected">Rejected</option>
+                        <option value="Awaiting Approval">Awaiting Approval</option>
+                        <option value="Completed">Completed</option>
                     </select>
                 </div>
             </div>
@@ -173,15 +212,13 @@ const ArtworkDashboard = () => {
 
                         <div className="artwork-actions">
                             <select 
-                                value={request.Status || ''} 
+                                value={request.Status || 'Awaiting Approval'} 
                                 onChange={(e) => handleStatusChange(request.ID_Design, e.target.value)}
-                                className={`status-select ${request.Status?.toLowerCase().replace(/\s+/g, '-') || 'pending'}`}
+                                className={`status-select ${request.Status?.replace(/\s+/g, '-').toLowerCase() || 'awaiting-approval'}`}
                                 data-tooltip="Update artwork status"
                             >
-                                <option value="">Pending</option>
-                                <option value="In Progress">In Progress</option>
+                                <option value="Awaiting Approval">Awaiting Approval</option>
                                 <option value="Completed">Completed</option>
-                                <option value="Rejected">Rejected</option>
                             </select>
                         </div>
                     </div>

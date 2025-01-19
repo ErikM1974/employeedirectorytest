@@ -9,7 +9,34 @@ router.get('/requests', async (req, res) => {
         const token = await tokenManager.getToken();
         const page = parseInt(req.query.page) || 1;
         
-        // Get artwork requests with pagination and sorting
+        // Build search query
+        const searchQuery = req.query.search?.trim();
+        const statusFilter = req.query.status?.trim();
+        
+        // Build the where clause using Caspio's exact syntax
+        let whereConditions = [];
+        if (searchQuery) {
+            // Check if search is a number for ID_Design
+            const isNumber = !isNaN(searchQuery);
+            if (isNumber) {
+                whereConditions.push(`ID_Design=${searchQuery}`);
+            } else {
+                // Otherwise search company name (case insensitive)
+                whereConditions.push(`CompanyName LIKE '%${searchQuery}%'`);
+            }
+        }
+        if (statusFilter && statusFilter !== 'all') {
+            whereConditions.push(`Status='${statusFilter}'`);
+        }
+
+        const whereClause = whereConditions.length > 0 ? whereConditions.join(' AND ') : undefined;
+        console.log('Search conditions:', {
+            searchQuery,
+            statusFilter,
+            whereClause
+        });
+
+        // Get artwork requests with search, filtering, and sorting
         const response = await axios.get(
             `${process.env.API_BASE_URL}/tables/ArtRequests/records`,
             {
@@ -18,6 +45,7 @@ router.get('/requests', async (req, res) => {
                     Accept: 'application/json'
                 },
                 params: {
+                    'q.where': whereConditions.length > 0 ? whereConditions.join(' AND ') : undefined,
                     'q.orderBy': 'Date_Created DESC',
                     'q.limit': 200,
                     'q.pageSize': 20,
@@ -25,6 +53,15 @@ router.get('/requests', async (req, res) => {
                 }
             }
         );
+
+        // Log the query for debugging
+        console.log('Query params:', {
+            where: whereConditions.length > 0 ? whereConditions.join(' AND ') : 'none',
+            searchQuery,
+            statusFilter,
+            page,
+            resultCount: response.data.Result.length
+        });
 
         console.log('Raw records from Caspio:', response.data.Result.slice(0, 1));
 
@@ -121,28 +158,48 @@ router.put('/status/:id', async (req, res) => {
 
         console.log('Updating status:', { id, status });
 
+        console.log('Attempting to update status with:', {
+            id,
+            status,
+            url: `${process.env.API_BASE_URL}/tables/ArtRequests/records`,
+            where: `ID_Design=${id}`
+        });
+
         // Update using exact format from Swagger test
         const updateResponse = await axios.put(
-            `${process.env.API_BASE_URL}/tables/ArtRequests/records`,
+            `${process.env.API_BASE_URL}/tables/ArtRequests/records?q.where=ID_Design%3D${id}`,
             { Status: status },
             {
                 headers: {
                     Authorization: `Bearer ${token}`,
                     'Content-Type': 'application/json',
                     Accept: 'application/json'
-                },
-                params: {
-                    'q.where': `ID_Design=${id}`
                 }
             }
         );
 
-        console.log('Update response:', updateResponse.data);
+        console.log('Update response:', {
+            status: updateResponse.status,
+            data: updateResponse.data,
+            recordsAffected: updateResponse.data.RecordsAffected
+        });
 
-        if (updateResponse.data.RecordsAffected === 1) {
-            res.json({ success: true });
+        // Consider the update successful if at least one record was affected
+        if (updateResponse.data.RecordsAffected > 0) {
+            res.json({ 
+                success: true,
+                message: `Status updated to ${status}`,
+                recordsAffected: updateResponse.data.RecordsAffected
+            });
         } else {
-            res.status(404).json({ error: 'Record not found or not updated' });
+            res.status(404).json({ 
+                error: 'No records were updated',
+                details: {
+                    id,
+                    status,
+                    recordsAffected: updateResponse.data.RecordsAffected
+                }
+            });
         }
 
     } catch (error) {

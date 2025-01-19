@@ -124,6 +124,12 @@
     animation: glow 2s ease-in-out infinite;
 }
 
+.search-input.searching {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite linear;
+}
+
 .status-filter {
     padding: 12px 16px;
     border: 2px solid #e9ecef;
@@ -226,13 +232,16 @@
     animation: pulse 2s infinite;
 }
 
-.status.pending {
+.status-awaiting-approval {
     background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
     color: #92400e;
     border: 1px solid #fbbf24;
-    background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
-    color: #991b1b;
-    border: 1px solid #f87171;
+}
+
+.status-completed {
+    background: linear-gradient(135deg, #dcfce7 0%, #86efac 100%);
+    color: #166534;
+    border: 1px solid #4ade80;
 }
 
 .artwork-files {
@@ -334,28 +343,16 @@
     animation: glow 2s ease-in-out infinite;
 }
 
-.status-select.pending {
+.status-select.awaiting-approval {
     border-color: #fbbf24;
     color: #92400e;
     background: #fef3c7;
-}
-
-.status-select.in-progress {
-    border-color: #38bdf8;
-    color: #075985;
-    background: #e0f2fe;
 }
 
 .status-select.completed {
     border-color: #4ade80;
     color: #166534;
     background: #dcfce7;
-}
-
-.status-select.rejected {
-    border-color: #f87171;
-    color: #991b1b;
-    background: #fee2e2;
 }
 
 .no-results {
